@@ -13,6 +13,7 @@ from app.ai.client import summarize  # noqa: F401  (monkeypatch-doel in tests)
 from app.ai.questions import generate_questions  # noqa: F401  (monkeypatch-doel in tests)
 from app.models import Source
 from app.render import html as render_html
+from app.render.pdf import html_to_pdf  # noqa: F401  (monkeypatch-doel in tests)
 from app.store import Store
 
 _TEMPLATES = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
@@ -175,10 +176,15 @@ def create_app() -> FastAPI:
         store.set_bloom_level(project_id, level)
         return {"status": "ok", "level": level}
 
-    @app.post("/export", response_class=HTMLResponse)
-    def export():
+    def _build_reader_html() -> Path:
         sources = store.list_sources(project_id)
         project = store.get_project(project_id)
+        title = project.reader_title or project.name
+        meta_parts = [p for p in (project.module_code, project.academic_year) if p]
+        subtitle = " · ".join(meta_parts) if meta_parts else None
+        questions_by_source = {
+            s.id: [q.text for q in store.list_questions(s.id)] for s in sources
+        }
 
         def render_pdf_pages(filename: str):
             return pdf.render_pages_to_png(
@@ -186,16 +192,26 @@ def create_app() -> FastAPI:
                 settings.render_dir / Path(filename).stem,
             )
 
-        title = project.reader_title or project.name
-        meta_parts = [p for p in (project.module_code, project.academic_year) if p]
-        subtitle = " · ".join(meta_parts) if meta_parts else None
-
-        out = render_html.render_reader(
+        return render_html.render_reader(
             title, sources, settings.render_dir,
             render_pdf_pages=render_pdf_pages, subtitle=subtitle,
+            questions_by_source=questions_by_source,
         )
+
+    @app.post("/export", response_class=HTMLResponse)
+    def export():
+        out = _build_reader_html()
         return HTMLResponse(
             f'<a href="file://{out}" target="_blank">Reader geexporteerd: {out}</a>'
+        )
+
+    @app.post("/export/pdf", response_class=HTMLResponse)
+    def export_pdf():
+        html_out = _build_reader_html()
+        pdf_out = settings.render_dir / "reader.pdf"
+        html_to_pdf(html_out, pdf_out)
+        return HTMLResponse(
+            f'<a href="file://{pdf_out}" target="_blank">PDF geexporteerd: {pdf_out}</a>'
         )
 
     return app

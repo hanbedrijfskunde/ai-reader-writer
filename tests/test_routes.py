@@ -216,3 +216,36 @@ def test_add_edit_delete_question(tmp_path, monkeypatch):
     assert "Aangepast?" in r2.text and "Mijn vraag?" not in r2.text
     r3 = client.post(f"/questions/{qid}/delete")
     assert "Aangepast?" not in r3.text
+
+
+def test_export_html_includes_questions(tmp_path, monkeypatch):
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    sid = _add_pdf_like_source(client, monkeypatch)
+    client.post(f"/sources/{sid}/questions/add", data={"text": "Exportvraag?"})
+    monkeypatch.setattr(main.pdf, "render_pages_to_png", lambda *a, **k: [])
+    client.post("/export")
+    html_txt = (tmp_path / "data" / "renders" / "index.html").read_text(encoding="utf-8")
+    assert "Verdiepende vragen" in html_txt
+    assert "Exportvraag?" in html_txt
+
+
+def test_export_pdf_route_invokes_printer(tmp_path, monkeypatch):
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    sid = _add_pdf_like_source(client, monkeypatch)
+    monkeypatch.setattr(main.pdf, "render_pages_to_png", lambda *a, **k: [])
+    seen = {}
+
+    def fake_pdf(html_path, pdf_path):
+        from pathlib import Path
+        Path(pdf_path).write_bytes(b"%PDF-1.4 fake")
+        seen["html"] = str(html_path)
+        seen["pdf"] = str(pdf_path)
+        return Path(pdf_path)
+
+    monkeypatch.setattr(main, "html_to_pdf", fake_pdf)
+    resp = client.post("/export/pdf")
+    assert resp.status_code == 200
+    assert seen["html"].endswith("index.html")
+    assert (tmp_path / "data" / "renders" / "reader.pdf").exists()

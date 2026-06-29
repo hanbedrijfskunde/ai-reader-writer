@@ -56,8 +56,11 @@
   {% include "_source_list.html" %}
 
   <h2>Export</h2>
-  <form hx-post="/export" hx-target="#export-result">
+  <form hx-post="/export" hx-target="#export-result" style="display:inline">
     <button type="submit">Exporteer reader (HTML)</button>
+  </form>
+  <form hx-post="/export/pdf" hx-target="#export-result" style="display:inline">
+    <button type="submit">Exporteer reader (PDF)</button>
   </form>
   <div id="export-result"></div>
 </body>
