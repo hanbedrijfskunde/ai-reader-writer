@@ -11,6 +11,7 @@ from app.config import load_settings
 from app.ingest import pdf, video
 from app.ai.client import summarize  # noqa: F401  (monkeypatch-doel in tests)
 from app.ai.questions import generate_questions  # noqa: F401  (monkeypatch-doel in tests)
+from app.ai.quotes import extract_quote  # noqa: F401  (monkeypatch-doel in tests)
 from app.models import Source
 from app.render import html as render_html
 from app.render.pdf import html_to_pdf  # noqa: F401  (monkeypatch-doel in tests)
@@ -38,6 +39,15 @@ def create_app() -> FastAPI:
             request, "_source_list.html",
             {"sources": sources, "questions": questions},
         )
+
+    def _autoquote(stored: Source) -> None:
+        if stored.text.strip():
+            quote = extract_quote(
+                stored.text, model=settings.default_model,
+                claude_key=settings.anthropic_key,
+            )
+            if quote:
+                store.set_quote(stored.id, quote)
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -78,7 +88,8 @@ def create_app() -> FastAPI:
             text=pdf.extract_text(dest), filename=sanitized_filename,
             page_count=pdf.page_count(dest),
         )
-        store.add_source(project_id, src)
+        stored = store.add_source(project_id, src)
+        _autoquote(stored)
         return _list_partial(request)
 
     @app.post("/sources/video", response_class=HTMLResponse)
@@ -100,7 +111,8 @@ def create_app() -> FastAPI:
             duration=meta.get("duration"), thumbnail_url=meta.get("thumbnail"),
             synopsis=synopsis,
         )
-        store.add_source(project_id, src)
+        stored = store.add_source(project_id, src)
+        _autoquote(stored)
         return _list_partial(request)
 
     @app.post("/sources/reorder", response_class=HTMLResponse)
