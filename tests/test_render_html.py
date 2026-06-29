@@ -47,3 +47,20 @@ def test_render_skips_excluded_sources(tmp_path):
     excl.included = False
     out = html.render_reader("M", [excl], tmp_path, render_pdf_pages=lambda fn: [])
     assert "Verborgen" not in out.read_text(encoding="utf-8")
+
+
+def test_render_preserves_source_order(tmp_path):
+    out = html.render_reader(
+        "Order Test", [_video("AAA"), _doc("BBB")], tmp_path, render_pdf_pages=lambda fn: [],
+    )
+    content = out.read_text(encoding="utf-8")
+    assert content.index("AAA") < content.index("BBB")
+
+
+def test_render_escapes_html_in_title(tmp_path):
+    v = _video("x")
+    v.title = "<script>alert(1)</script>"
+    out = html.render_reader("Escape Test", [v], tmp_path, render_pdf_pages=lambda fn: [])
+    content = out.read_text(encoding="utf-8")
+    assert "<script>" not in content
+    assert "&lt;script&gt;" in content
