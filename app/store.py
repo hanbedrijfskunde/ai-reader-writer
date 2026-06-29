@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS sources (
     duration TEXT,
     thumbnail_url TEXT,
     synopsis TEXT,
-    quote TEXT
+    quote TEXT,
+    processing INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS questions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +45,7 @@ CREATE TABLE IF NOT EXISTS questions (
 _SOURCE_COLS = [
     "id", "project_id", "kind", "title", "position", "included", "text",
     "filename", "page_count", "youtube_url", "video_id", "channel",
-    "duration", "thumbnail_url", "synopsis", "quote",
+    "duration", "thumbnail_url", "synopsis", "quote", "processing",
 ]
 
 
@@ -77,7 +78,7 @@ class Store:
                 self._conn.execute(f"ALTER TABLE projects ADD COLUMN {col} {col_type}")
         self._conn.commit()
 
-    _SOURCE_META_COLS = {"quote": "TEXT"}
+    _SOURCE_META_COLS = {"quote": "TEXT", "processing": "INTEGER NOT NULL DEFAULT 0"}
 
     def _ensure_source_columns(self) -> None:
         existing = {r["name"] for r in self._conn.execute("PRAGMA table_info(sources)")}
@@ -128,6 +129,7 @@ class Store:
     def _row_to_source(self, row: sqlite3.Row) -> Source:
         data = {k: row[k] for k in _SOURCE_COLS}
         data["included"] = bool(data["included"])
+        data["processing"] = bool(data["processing"])
         return Source(**data)
 
     def add_source(self, project_id: int, source: Source) -> Source:
@@ -139,13 +141,13 @@ class Store:
             """INSERT INTO sources
                (project_id, kind, title, position, included, text, filename,
                 page_count, youtube_url, video_id, channel, duration,
-                thumbnail_url, synopsis, quote)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                thumbnail_url, synopsis, quote, processing)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (project_id, source.kind, source.title, next_pos,
              int(source.included), source.text, source.filename,
              source.page_count, source.youtube_url, source.video_id,
              source.channel, source.duration, source.thumbnail_url,
-             source.synopsis, source.quote),
+             source.synopsis, source.quote, int(source.processing)),
         )
         self._conn.commit()
         row = self._conn.execute(
@@ -175,6 +177,28 @@ class Store:
     def set_quote(self, source_id: int, quote: str | None) -> None:
         self._conn.execute(
             "UPDATE sources SET quote = ? WHERE id = ?", (quote, source_id)
+        )
+        self._conn.commit()
+
+    def finish_video(
+        self,
+        source_id: int,
+        *,
+        title: str,
+        video_id: str | None = None,
+        channel: str | None = None,
+        duration: str | None = None,
+        thumbnail_url: str | None = None,
+        text: str = "",
+        synopsis: str | None = None,
+        quote: str | None = None,
+    ) -> None:
+        self._conn.execute(
+            "UPDATE sources SET title = ?, video_id = ?, channel = ?, duration = ?, "
+            "thumbnail_url = ?, text = ?, synopsis = ?, quote = ?, processing = 0 "
+            "WHERE id = ?",
+            (title, video_id, channel, duration, thumbnail_url, text,
+             synopsis, quote, source_id),
         )
         self._conn.commit()
 
