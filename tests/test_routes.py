@@ -249,3 +249,15 @@ def test_export_pdf_route_invokes_printer(tmp_path, monkeypatch):
     assert resp.status_code == 200
     assert seen["html"].endswith("index.html")
     assert (tmp_path / "data" / "renders" / "reader.pdf").exists()
+
+
+def test_question_text_escaped_in_editor(tmp_path, monkeypatch):
+    import re
+    client = _client(tmp_path, monkeypatch)
+    sid = _add_pdf_like_source(client, monkeypatch)
+    resp = client.post(f"/sources/{sid}/questions/add",
+                       data={"text": '<b>"gevaar"</b>'})
+    assert resp.status_code == 200
+    # the raw tag must not appear unescaped; the escaped form must
+    assert "<b>\"gevaar\"</b>" not in resp.text
+    assert "&lt;b&gt;" in resp.text

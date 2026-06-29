@@ -152,7 +152,8 @@ def create_app() -> FastAPI:
 
     @app.post("/questions/{question_id}/edit", response_class=HTMLResponse)
     def edit_q(request: Request, question_id: int, text: str = Form(...)):
-        store.update_question(question_id, text.strip())
+        if text.strip():
+            store.update_question(question_id, text.strip())
         return _list_partial(request)
 
     @app.post("/questions/{question_id}/delete", response_class=HTMLResponse)
