@@ -198,6 +198,9 @@ def create_app() -> FastAPI:
         questions_by_source = {
             s.id: [q.text for q in store.list_questions(s.id)] for s in sources
         }
+        quotes_by_source = {
+            s.id: s.quote for s in sources if s.quote
+        }
 
         def render_pdf_pages(filename: str):
             return pdf.render_pages_to_png(
@@ -209,6 +212,7 @@ def create_app() -> FastAPI:
             title, sources, settings.render_dir,
             render_pdf_pages=render_pdf_pages, subtitle=subtitle,
             questions_by_source=questions_by_source,
+            quotes_by_source=quotes_by_source,
         )
 
     @app.post("/export", response_class=HTMLResponse)

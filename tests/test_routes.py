@@ -305,3 +305,15 @@ def main_store(client):
 
 def store_project_id(client):
     return client.app.state.project_id
+
+
+def test_export_html_includes_quote(tmp_path, monkeypatch):
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "inhoud over leiderschap")
+    sid = _add_pdf_like_source(client, monkeypatch)  # has text -> quote stored
+    monkeypatch.setattr(main.pdf, "render_pages_to_png", lambda *a, **k: [])
+    client.post("/export")
+    html_txt = (tmp_path / "data" / "renders" / "index.html").read_text(encoding="utf-8")
+    assert 'class="r-quote"' in html_txt
+    assert "inhoud over leiderschap" in html_txt
