@@ -25,6 +25,29 @@
       </form>
     </details>
     {% endif %}
+    <div class="questions">
+      <form hx-post="/sources/{{ s.id }}/questions/generate" hx-target="#source-list" hx-swap="outerHTML" style="display:inline">
+        <button type="submit">Genereer verdiepende vragen</button>
+      </form>
+      {% if not s.text %}<em>(geen brontekst — voeg eerst een transcript toe)</em>{% endif %}
+      <ol>
+        {% for q in questions.get(s.id, []) %}
+        <li>
+          <form hx-post="/questions/{{ q.id }}/edit" hx-target="#source-list" hx-swap="outerHTML" style="display:inline">
+            <input type="text" name="text" value="{{ q.text }}" size="60">
+            <button type="submit">opslaan</button>
+          </form>
+          <form hx-post="/questions/{{ q.id }}/delete" hx-target="#source-list" hx-swap="outerHTML" style="display:inline">
+            <button type="submit">x</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ol>
+      <form hx-post="/sources/{{ s.id }}/questions/add" hx-target="#source-list" hx-swap="outerHTML">
+        <input type="text" name="text" placeholder="Eigen vraag toevoegen" size="60">
+        <button type="submit">Toevoegen</button>
+      </form>
+    </div>
   </li>
   {% endfor %}
 </ul>

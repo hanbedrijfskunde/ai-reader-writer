@@ -47,7 +47,7 @@
   <form hx-post="/bloom">
     <select name="level">
       <option>Onthouden</option><option>Begrijpen</option><option>Toepassen</option>
-      <option>Analyseren</option><option>Evalueren</option><option>Creeren</option>
+      <option>Analyseren</option><option>Evalueren</option><option>Creëren</option>
     </select>
     <button type="submit">Opslaan</button>
   </form>
@@ -56,8 +56,11 @@
   {% include "_source_list.html" %}
 
   <h2>Export</h2>
-  <form hx-post="/export" hx-target="#export-result">
+  <form hx-post="/export" hx-target="#export-result" style="display:inline">
     <button type="submit">Exporteer reader (HTML)</button>
+  </form>
+  <form hx-post="/export/pdf" hx-target="#export-result" style="display:inline">
+    <button type="submit">Exporteer reader (PDF)</button>
   </form>
   <div id="export-result"></div>
 </body>

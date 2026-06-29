@@ -96,3 +96,46 @@ def test_set_synopsis_and_source_text(tmp_path):
     got = store.list_sources(p.id)[0]
     assert got.synopsis == "Handmatige synopsis"
     assert got.text == "het transcript"
+
+
+def test_questions_add_list_update_delete(tmp_path):
+    store = Store(tmp_path / "t.sqlite")
+    p = store.create_project("M")
+    s = store.add_source(p.id, Source(
+        id=0, project_id=0, kind="document", title="D", position=0,
+        included=True, text="body", filename="d.pdf", page_count=1,
+    ))
+    q1 = store.add_question(s.id, "Waarom?")
+    q2 = store.add_question(s.id, "Hoe?")
+    assert q1.position == 0 and q2.position == 1
+    assert [q.text for q in store.list_questions(s.id)] == ["Waarom?", "Hoe?"]
+    store.update_question(q1.id, "Waarom precies?")
+    store.delete_question(q2.id)
+    got = store.list_questions(s.id)
+    assert [q.text for q in got] == ["Waarom precies?"]
+
+
+def test_replace_questions(tmp_path):
+    store = Store(tmp_path / "t.sqlite")
+    p = store.create_project("M")
+    s = store.add_source(p.id, Source(
+        id=0, project_id=0, kind="video", title="V", position=0,
+        included=True, text="t",
+    ))
+    store.add_question(s.id, "oud 1")
+    store.replace_questions(s.id, ["nieuw 1", "nieuw 2", "nieuw 3"])
+    got = store.list_questions(s.id)
+    assert [q.text for q in got] == ["nieuw 1", "nieuw 2", "nieuw 3"]
+    assert [q.position for q in got] == [0, 1, 2]
+
+
+def test_questions_cascade_on_source_delete(tmp_path):
+    store = Store(tmp_path / "t.sqlite")
+    p = store.create_project("M")
+    s = store.add_source(p.id, Source(
+        id=0, project_id=0, kind="document", title="D", position=0,
+        included=True, text="t", filename="d.pdf", page_count=1,
+    ))
+    store.add_question(s.id, "Q")
+    store.remove_source(s.id)
+    assert store.list_questions(s.id) == []

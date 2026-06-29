@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from app.models import Project, Source
+from app.models import Project, Question, Source
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS projects (
@@ -31,6 +31,12 @@ CREATE TABLE IF NOT EXISTS sources (
     duration TEXT,
     thumbnail_url TEXT,
     synopsis TEXT
+);
+CREATE TABLE IF NOT EXISTS questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_id INTEGER NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    text TEXT NOT NULL
 );
 """
 
@@ -170,5 +176,50 @@ class Store:
             self._conn.execute(
                 "UPDATE sources SET position = ? WHERE id = ? AND project_id = ?",
                 (pos, sid, project_id),
+            )
+        self._conn.commit()
+
+    def add_question(self, source_id: int, text: str) -> Question:
+        next_pos = self._conn.execute(
+            "SELECT COALESCE(MAX(position) + 1, 0) AS p FROM questions WHERE source_id = ?",
+            (source_id,),
+        ).fetchone()["p"]
+        cur = self._conn.execute(
+            "INSERT INTO questions (source_id, position, text) VALUES (?,?,?)",
+            (source_id, next_pos, text),
+        )
+        self._conn.commit()
+        row = self._conn.execute(
+            "SELECT id, source_id, position, text FROM questions WHERE id = ?",
+            (int(cur.lastrowid),),
+        ).fetchone()
+        return Question(id=row["id"], source_id=row["source_id"],
+                        position=row["position"], text=row["text"])
+
+    def list_questions(self, source_id: int) -> list[Question]:
+        rows = self._conn.execute(
+            "SELECT id, source_id, position, text FROM questions "
+            "WHERE source_id = ? ORDER BY position",
+            (source_id,),
+        ).fetchall()
+        return [Question(id=r["id"], source_id=r["source_id"],
+                         position=r["position"], text=r["text"]) for r in rows]
+
+    def update_question(self, question_id: int, text: str) -> None:
+        self._conn.execute(
+            "UPDATE questions SET text = ? WHERE id = ?", (text, question_id)
+        )
+        self._conn.commit()
+
+    def delete_question(self, question_id: int) -> None:
+        self._conn.execute("DELETE FROM questions WHERE id = ?", (question_id,))
+        self._conn.commit()
+
+    def replace_questions(self, source_id: int, texts: list[str]) -> None:
+        self._conn.execute("DELETE FROM questions WHERE source_id = ?", (source_id,))
+        for pos, text in enumerate(texts):
+            self._conn.execute(
+                "INSERT INTO questions (source_id, position, text) VALUES (?,?,?)",
+                (source_id, pos, text),
             )
         self._conn.commit()
