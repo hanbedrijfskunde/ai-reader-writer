@@ -113,3 +113,11 @@ def test_render_without_subtitle_has_no_meta(tmp_path):
     out = html.render_reader("T", [], tmp_path, render_pdf_pages=lambda fn: [])
     content = out.read_text(encoding="utf-8")
     assert 'class="reader-meta"' not in content
+
+
+def test_render_video_omits_empty_synopsis_paragraph(tmp_path):
+    v = _video("Zonder synopsis")
+    v.synopsis = None
+    out = html.render_reader("M", [v], tmp_path, render_pdf_pages=lambda fn: [])
+    content = out.read_text(encoding="utf-8")
+    assert 'class="synopsis"' not in content  # no empty synopsis block

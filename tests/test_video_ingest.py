@@ -54,3 +54,36 @@ def test_build_source_without_transcript_has_no_synopsis():
     assert src.text == ""
     assert src.synopsis is None
     assert src.thumbnail_url.endswith("maxresdefault.jpg")
+
+
+def test_run_with_retry_returns_first_with_transcript():
+    calls = {"n": 0}
+
+    def attempt():
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return {"transcript": [], "metadata": {"title": "x"}}
+        return {"transcript": [{"ts": "0:00", "text": "hi"}], "metadata": {"title": "x"}}
+
+    res = video._run_with_retry(attempt, attempts=2)
+    assert res["transcript"]
+    assert calls["n"] == 2  # retried once because the first had no transcript
+
+
+def test_run_with_retry_returns_last_when_never_transcript():
+    def attempt():
+        return {"transcript": [], "metadata": {"title": "x"}}
+
+    res = video._run_with_retry(attempt, attempts=2)
+    assert res["transcript"] == []
+
+
+def test_run_with_retry_stops_on_first_success():
+    calls = {"n": 0}
+
+    def attempt():
+        calls["n"] += 1
+        return {"transcript": [{"ts": "0:00", "text": "hi"}]}
+
+    video._run_with_retry(attempt, attempts=3)
+    assert calls["n"] == 1  # no extra attempts once a transcript is found

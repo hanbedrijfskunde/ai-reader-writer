@@ -52,12 +52,13 @@ def _render_video(s: Source) -> str:
     url = _html.escape(_safe_url(s.youtube_url))
     thumb = _html.escape(_safe_url(s.thumbnail_url))
     synopsis = _html.escape(s.synopsis or "")
+    synopsis_html = f'\n  <p class="synopsis">{synopsis}</p>' if synopsis else ""
     return (
         '<section class="source video">\n'
         f"  <h2>{title}</h2>\n"
         f'  <a href="{url}" target="_blank" rel="noopener">'
-        f'<img src="{thumb}" alt="{title}"></a>\n'
-        f'  <p class="synopsis">{synopsis}</p>\n'
+        f'<img src="{thumb}" alt="{title}"></a>'
+        f"{synopsis_html}\n"
         "</section>"
     )
 

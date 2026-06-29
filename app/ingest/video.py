@@ -14,16 +14,36 @@ _SCRIPT = (
 )
 
 
+def _run_with_retry(attempt, attempts: int = 2) -> dict:
+    """Call ``attempt`` until it yields a transcript, up to ``attempts`` times.
+
+    YouTube intermittently withholds the transcript from an automated session;
+    a second try recovers the flaky cases. When no attempt yields a transcript
+    the last (metadata-only) result is returned so the caller still gets the
+    title/thumbnail. Exceptions from ``attempt`` (e.g. an invalid URL) propagate
+    on the first try — those are not worth retrying.
+    """
+    last: dict = {}
+    for _ in range(attempts):
+        last = attempt()
+        if last.get("transcript"):
+            return last
+    return last
+
+
 def _default_runner(url: str) -> dict:
-    proc = subprocess.run(
-        [sys.executable, str(_SCRIPT), url, "--json"],
-        capture_output=True, text=True, timeout=180,
-    )
-    # exitcode 2 = ongeldige URL; exitcode 1 = alleen metadata (stdout bevat dan
-    # nog geldige JSON), dus alleen op 2 of lege stdout falen.
-    if proc.returncode == 2 or not proc.stdout.strip():
-        raise ValueError(f"kon video niet ophalen: {proc.stderr.strip() or url}")
-    return json.loads(proc.stdout)
+    def attempt() -> dict:
+        proc = subprocess.run(
+            [sys.executable, str(_SCRIPT), url, "--json", "--timeout", "60000"],
+            capture_output=True, text=True, timeout=240,
+        )
+        # exitcode 2 = ongeldige URL; exitcode 1 = alleen metadata (stdout bevat
+        # dan nog geldige JSON), dus alleen op 2 of lege stdout falen.
+        if proc.returncode == 2 or not proc.stdout.strip():
+            raise ValueError(f"kon video niet ophalen: {proc.stderr.strip() or url}")
+        return json.loads(proc.stdout)
+
+    return _run_with_retry(attempt, attempts=2)
 
 
 def fetch_raw(url: str, _runner=None) -> dict:

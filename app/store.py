@@ -143,6 +143,18 @@ class Store:
         ).fetchall()
         return [self._row_to_source(r) for r in rows]
 
+    def set_synopsis(self, source_id: int, synopsis: str | None) -> None:
+        self._conn.execute(
+            "UPDATE sources SET synopsis = ? WHERE id = ?", (synopsis, source_id)
+        )
+        self._conn.commit()
+
+    def set_source_text(self, source_id: int, text: str) -> None:
+        self._conn.execute(
+            "UPDATE sources SET text = ? WHERE id = ?", (text, source_id)
+        )
+        self._conn.commit()
+
     def set_included(self, source_id: int, included: bool) -> None:
         self._conn.execute(
             "UPDATE sources SET included = ? WHERE id = ?", (int(included), source_id)

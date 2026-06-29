@@ -8,6 +8,23 @@
     <form hx-post="/sources/{{ s.id }}/delete" hx-target="#source-list" hx-swap="outerHTML" style="display:inline">
       <button type="submit">verwijder</button>
     </form>
+    {% if s.kind == "video" %}
+    <details{% if not s.synopsis %} open{% endif %}>
+      <summary>
+        Synopsis / transcript
+        {% if not s.text %}<em>— geen transcript automatisch opgehaald</em>{% endif %}
+      </summary>
+      <form hx-post="/sources/{{ s.id }}/content" hx-target="#source-list" hx-swap="outerHTML">
+        <p><label>Synopsis<br>
+          <textarea name="synopsis" rows="3" cols="50"
+                    placeholder="Synopsis van de video">{{ s.synopsis or '' }}</textarea></label></p>
+        <p><label>Transcript plakken <small>(optioneel — genereert automatisch een synopsis)</small><br>
+          <textarea name="transcript" rows="4" cols="50"
+                    placeholder="Plak hier het transcript als het niet automatisch is opgehaald..."></textarea></label></p>
+        <button type="submit">Opslaan</button>
+      </form>
+    </details>
+    {% endif %}
   </li>
   {% endfor %}
 </ul>
