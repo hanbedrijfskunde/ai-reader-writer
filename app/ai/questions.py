@@ -27,14 +27,18 @@ def _default_caller(prompt: str, *, model: str, claude_key: str | None) -> str:
 def _parse_questions(raw: str) -> list[str]:
     s = raw.strip()
     if s.startswith("```"):
-        # strip a ```json ... ``` fence: keep the array between the brackets
-        if "[" in s and "]" in s:
-            s = s[s.index("["): s.rindex("]") + 1]
+        lines = s.splitlines()
+        # drop the opening ```lang line and a trailing ``` line if present
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+        s = "\n".join(lines).strip()
     data = json.loads(s)
-    if not isinstance(data, list) or not all(
+    if not isinstance(data, list) or not data or not all(
         isinstance(x, str) and x.strip() for x in data
     ):
-        raise ValueError("verwacht een JSON-array van niet-lege vraag-strings")
+        raise ValueError("verwacht een niet-lege JSON-array van vraag-strings")
     return [x.strip() for x in data]
 
 
