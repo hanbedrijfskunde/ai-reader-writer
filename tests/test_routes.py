@@ -390,6 +390,23 @@ def test_process_video_success(tmp_path, monkeypatch):
     assert got.quote == "inhoud over leiderschap"
 
 
+def test_processing_source_shows_indicator_and_polls(tmp_path, monkeypatch):
+    import app.main as main
+    monkeypatch.setattr(main, "process_video",
+                        lambda store, settings, source_id, url: None)  # stays pending
+    client = _client(tmp_path, monkeypatch)
+    client.post("/sources/video", data={"url": "https://youtu.be/x"})
+    body = client.get("/").text
+    assert "bezig met ophalen" in body
+    assert 'hx-get="/sources"' in body          # list polls while pending
+
+
+def test_no_polling_when_nothing_processing(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+    body = client.get("/").text
+    assert 'hx-get="/sources"' not in body
+
+
 def test_process_video_failure_sets_failed_title(tmp_path, monkeypatch):
     import app.main as main
     from app.config import load_settings

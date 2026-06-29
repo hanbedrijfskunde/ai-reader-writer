@@ -1,6 +1,12 @@
-<ul id="source-list">
+<ul id="source-list"{% if any_processing %} hx-get="/sources" hx-trigger="every 2s" hx-target="#source-list" hx-swap="outerHTML"{% endif %}>
   {% for s in sources %}
   <li data-id="{{ s.id }}">
+    {% if s.processing %}
+    <strong>{{ s.title }}</strong> <em>⏳ bezig met ophalen…</em>
+    <form hx-post="/sources/{{ s.id }}/delete" hx-target="#source-list" hx-swap="outerHTML" style="display:inline">
+      <button type="submit">verwijder</button>
+    </form>
+    {% else %}
     <strong>{{ s.title }}</strong> <span>({{ s.kind }})</span>
     <form hx-post="/sources/{{ s.id }}/toggle" hx-target="#source-list" hx-swap="outerHTML" style="display:inline">
       <button type="submit">{{ "in reader" if s.included else "verborgen" }}</button>
@@ -48,6 +54,7 @@
         <button type="submit">Toevoegen</button>
       </form>
     </div>
+    {% endif %}
   </li>
   {% endfor %}
 </ul>
