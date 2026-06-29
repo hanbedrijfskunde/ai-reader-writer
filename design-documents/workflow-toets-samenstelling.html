@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>workflow-toets-samenstelling</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="workflow-toets-samenstelling_files/libs/clipboard/clipboard.min.js"></script>
+<script src="workflow-toets-samenstelling_files/libs/quarto-html/quarto.js"></script>
+<script src="workflow-toets-samenstelling_files/libs/quarto-html/popper.min.js"></script>
+<script src="workflow-toets-samenstelling_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="workflow-toets-samenstelling_files/libs/quarto-html/anchor.min.js"></script>
+<link href="workflow-toets-samenstelling_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="workflow-toets-samenstelling_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="workflow-toets-samenstelling_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="workflow-toets-samenstelling_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="workflow-toets-samenstelling_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="handboek-toetssamenstelling-mc-vragen-via-ai" class="level1">
+<h1>Handboek Toetssamenstelling: MC-vragen via AI</h1>
+<section id="inleiding" class="level2">
+<h2 class="anchored" data-anchor-id="inleiding">1. Inleiding</h2>
+<p>Dit handboek beschrijft hoe je met behulp van AI (Claude API) kwalitatief hoogwaardige multiple-choice toetsvragen genereert, beoordeelt en samenstelt. Het is bedoeld voor toetsontwerpers in het hoger onderwijs.</p>
+<p><strong>Leeswijzer:</strong></p>
+<ul>
+<li><strong>§2 Kwaliteitskader</strong> — de inhoudelijke maatstaf: welke eisen stellen we aan MC-vragen?</li>
+<li><strong>§3 Voorbeelden</strong> — concrete goede en slechte vragen met analyse</li>
+<li><strong>§4 Workflow</strong> — de technische stappen om van vragenbank naar toets te komen</li>
+</ul>
+<p>Items gemarkeerd met ⚑ zijn aanscherpingen op basis van docentfeedback op AI-gegenereerde vragen.</p>
+<hr>
+</section>
+<section id="kwaliteitskader-mc-vragen" class="level2">
+<h2 class="anchored" data-anchor-id="kwaliteitskader-mc-vragen">2. Kwaliteitskader MC-vragen</h2>
+<section id="drie-kwaliteitsdimensies" class="level3">
+<h3 class="anchored" data-anchor-id="drie-kwaliteitsdimensies">2.1 Drie kwaliteitsdimensies</h3>
+<p>Elke MC-vraag wordt onafhankelijk beoordeeld op drie dimensies. Er is geen samengestelde score — elke dimensie levert een eigen 1-5 beoordeling op.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 47%">
+<col style="width: 52%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Dimensie</th>
+<th>Kernvraag</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Validiteit</strong></td>
+<td>Meet de vraag wat je beoogt te meten?</td>
+</tr>
+<tr class="even">
+<td><strong>Betrouwbaarheid</strong></td>
+<td>Levert de vraag consistente en nauwkeurige resultaten op?</td>
+</tr>
+<tr class="odd">
+<td><strong>Technische kwaliteit</strong></td>
+<td>Is de vraag goed geconstrueerd (stam, antwoord, afleiders)?</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="validiteit" class="level3">
+<h3 class="anchored" data-anchor-id="validiteit">2.2 Validiteit</h3>
+<p>Validiteit beantwoordt de vraag: <strong>meet de toets wat je beoogt te meten?</strong> Een valide MC-toets reflecteert de leerdoelen van de cursus. Als de leerdoelen gericht zijn op ‘toepassen’, maar de toets vraagt alleen ‘feitenkennis’, dan is de toets niet valide.</p>
+<section id="cognitief-niveau-blooms-taxonomy" class="level4">
+<h4 class="anchored" data-anchor-id="cognitief-niveau-blooms-taxonomy">Cognitief niveau (Bloom’s Taxonomy)</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 32%">
+<col style="width: 48%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Niveau</th>
+<th>Beschrijving</th>
+<th>Voorbeeldwerkwoorden</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Onthouden</strong></td>
+<td>Feiten reproduceren</td>
+<td>benoemen, opsommen, definiëren</td>
+</tr>
+<tr class="even">
+<td><strong>Begrijpen</strong></td>
+<td>Betekenis uitleggen</td>
+<td>uitleggen, samenvatten, vergelijken</td>
+</tr>
+<tr class="odd">
+<td><strong>Toepassen</strong></td>
+<td>Kennis gebruiken in nieuwe situatie</td>
+<td>toepassen, demonstreren, gebruiken</td>
+</tr>
+<tr class="even">
+<td><strong>Analyseren</strong></td>
+<td>Onderdelen onderscheiden, relaties leggen</td>
+<td>analyseren, onderscheiden, relateren</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="leerdoelalignment" class="level4">
+<h4 class="anchored" data-anchor-id="leerdoelalignment">Leerdoelalignment</h4>
+<p>De vraag moet kernconcepten toetsen, niet triviale details. Het cognitief niveau moet passen bij wat het leerdoel vereist.</p>
+</section>
+<section id="validiteitsproblemen-detecteren" class="level4">
+<h4 class="anchored" data-anchor-id="validiteitsproblemen-detecteren">Validiteitsproblemen detecteren</h4>
+<ol type="1">
+<li><strong>Te laag cognitief niveau</strong>: Vraag toetst alleen feitenkennis terwijl leerdoelen toepassing vereisen</li>
+<li><strong>Irrelevante details</strong>: Vraag focust op triviale details in plaats van kernconcepten</li>
+<li><strong>Contextmismatch</strong>: Vraag past niet bij het vakgebied of de praktijkcontext</li>
+</ol>
+</section>
+<section id="passende-moeilijkheidsgraad" class="level4">
+<h4 class="anchored" data-anchor-id="passende-moeilijkheidsgraad">⚑ Passende moeilijkheidsgraad</h4>
+<p>Zorg dat de vraag als geheel (stam + afleiders) onderscheidend is voor het beoogde cognitieve niveau. Ook “onthouden”-vragen moeten plausibele afleiders hebben — een te makkelijke vraag levert geen bruikbare meetinformatie op.</p>
+</section>
+<section id="geen-onderwerpdubbeling-in-batch" class="level4">
+<h4 class="anchored" data-anchor-id="geen-onderwerpdubbeling-in-batch">⚑ Geen onderwerpdubbeling in batch</h4>
+<p>Voorkom dat twee of meer vragen in dezelfde batch hetzelfde concept toetsen, tenzij op een significant ander cognitief niveau (bijv. onthouden vs.&nbsp;toepassen).</p>
+</section>
+<section id="scoringsmethodiek" class="level4">
+<h4 class="anchored" data-anchor-id="scoringsmethodiek">Scoringsmethodiek</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Score</th>
+<th>Label</th>
+<th>Beschrijving</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>5</td>
+<td>Excellent</td>
+<td>Toetst op passend cognitief niveau, kernstof</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Goed</td>
+<td>Toetst kernstof, niveau is adequaat</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Voldoende</td>
+<td>Toetst relevante stof, niveau kan hoger</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Matig</td>
+<td>Toetst te laag niveau of irrelevante details</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>Onvoldoende</td>
+<td>Toetst niet wat beoogd</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output-format" class="level4">
+<h4 class="anchored" data-anchor-id="output-format">Output format</h4>
+<ul>
+<li><code>val_cognitief_niveau</code>: Onthouden / Begrijpen / Toepassen / Analyseren</li>
+<li><code>val_score</code>: 1-5</li>
+<li><code>val_toelichting</code>: Korte motivatie (max 50 woorden)</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="betrouwbaarheid" class="level3">
+<h3 class="anchored" data-anchor-id="betrouwbaarheid">2.3 Betrouwbaarheid</h3>
+<p>Betrouwbaarheid gaat over de <strong>consistentie</strong> en <strong>nauwkeurigheid</strong> van de meting. Als een student de toets onder dezelfde omstandigheden opnieuw zou maken, zou de score dan ongeveer hetzelfde zijn? Een onbetrouwbare toets wordt sterk beïnvloed door toeval (gokken, onduidelijke vragen).</p>
+<section id="discriminerend-vermogen" class="level4">
+<h4 class="anchored" data-anchor-id="discriminerend-vermogen">Discriminerend vermogen</h4>
+<p>Kan de vraag onderscheid maken tussen studenten die de stof beheersen en studenten die dat niet doen?</p>
+<ul>
+<li><strong>Hoog</strong>: Alleen studenten met kennis kunnen correct antwoorden</li>
+<li><strong>Laag</strong>: Iedereen kan correct antwoorden (te makkelijk) of niemand (te moeilijk)</li>
+<li><strong>Geen</strong>: Vraag test iets anders dan kennis (bijv. leesvaardigheid, gokkans)</li>
+</ul>
+</section>
+<section id="ambiguïteit" class="level4">
+<h4 class="anchored" data-anchor-id="ambiguïteit">Ambiguïteit</h4>
+<p>Zijn er meerdere verdedigbare antwoorden mogelijk?</p>
+<ul>
+<li><strong>Geen ambiguïteit</strong>: Eén duidelijk correct antwoord</li>
+<li><strong>Lichte ambiguïteit</strong>: Kleine interpretatieruimte</li>
+<li><strong>Hoge ambiguïteit</strong>: Meerdere antwoorden verdedigbaar</li>
+</ul>
+</section>
+<section id="gokkansreductie" class="level4">
+<h4 class="anchored" data-anchor-id="gokkansreductie">Gokkansreductie</h4>
+<p>Worden studenten die gokken effectief afgestraft door plausibele afleiders?</p>
+</section>
+<section id="afleiders-niet-elimineerbaar-zonder-vakkennis" class="level4">
+<h4 class="anchored" data-anchor-id="afleiders-niet-elimineerbaar-zonder-vakkennis">⚑ Afleiders niet elimineerbaar zonder vakkennis</h4>
+<p>Afleiders mogen niet op basis van algemene kennis of logisch redeneren alleen al uitgesloten kunnen worden. Als een student zonder vakkennis meerdere opties direct kan wegstrepen, daalt het discriminerend vermogen en stijgt de effectieve gokkans.</p>
+</section>
+<section id="correct-antwoord-niet-te-voor-de-hand-liggend" class="level4">
+<h4 class="anchored" data-anchor-id="correct-antwoord-niet-te-voor-de-hand-liggend">⚑ Correct antwoord niet te voor de hand liggend</h4>
+<p>Het correcte antwoord mag niet zo vanzelfsprekend zijn dat het geen onderscheidend vermogen heeft. Als het juiste antwoord al op basis van intuïtie of common sense te identificeren is, meet de vraag geen vakkennis.</p>
+</section>
+<section id="betrouwbaarheidsproblemen-detecteren" class="level4">
+<h4 class="anchored" data-anchor-id="betrouwbaarheidsproblemen-detecteren">Betrouwbaarheidsproblemen detecteren</h4>
+<ol type="1">
+<li><strong>Plafondeffect</strong>: Vraag is zo makkelijk dat iedereen correct antwoordt</li>
+<li><strong>Vloereffect</strong>: Vraag is zo moeilijk dat niemand correct antwoordt</li>
+<li><strong>Ambigue vraagstelling</strong>: Meerdere interpretaties mogelijk</li>
+<li><strong>Meerdere juiste antwoorden</strong>: Meer dan één antwoord is verdedigbaar</li>
+</ol>
+</section>
+<section id="scoringsmethodiek-1" class="level4">
+<h4 class="anchored" data-anchor-id="scoringsmethodiek-1">Scoringsmethodiek</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Score</th>
+<th>Label</th>
+<th>Beschrijving</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>5</td>
+<td>Excellent</td>
+<td>Hoog discriminerend, geen ambiguïteit</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Goed</td>
+<td>Goed discriminerend, minimale ambiguïteit</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Voldoende</td>
+<td>Redelijk discriminerend</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Matig</td>
+<td>Laag discriminerend of ambigue</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>Onvoldoende</td>
+<td>Geen discriminatie of meerdere juiste antwoorden</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output-format-1" class="level4">
+<h4 class="anchored" data-anchor-id="output-format-1">Output format</h4>
+<ul>
+<li><code>bet_discriminatie</code>: Hoog / Gemiddeld / Laag / Geen</li>
+<li><code>bet_ambiguiteit</code>: Geen / Licht / Hoog</li>
+<li><code>bet_score</code>: 1-5</li>
+<li><code>bet_toelichting</code>: Korte motivatie (max 50 woorden)</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="technische-kwaliteit" class="level3">
+<h3 class="anchored" data-anchor-id="technische-kwaliteit">2.4 Technische kwaliteit</h3>
+<p>De technische kwaliteit beoordeelt de constructie van de vraag zelf: stam, correct antwoord en afleiders.</p>
+<section id="de-stam" class="level4">
+<h4 class="anchored" data-anchor-id="de-stam">De stam</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 22%">
+<col style="width: 37%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Criterium</th>
+<th>Goed</th>
+<th>Probleem</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Helderheid</strong></td>
+<td>Ondubbelzinnig, student weet exact wat gevraagd wordt</td>
+<td>Vaag, meerdere interpretaties mogelijk</td>
+</tr>
+<tr class="even">
+<td><strong>Volledigheid</strong></td>
+<td>Bevat het complete probleem</td>
+<td>Student moet eerst opties lezen om vraag te begrijpen</td>
+</tr>
+<tr class="odd">
+<td><strong>Geen hints</strong></td>
+<td>Geen onbedoelde aanwijzingen naar correct antwoord</td>
+<td>Taalkundige of logische hints aanwezig</td>
+</tr>
+<tr class="even">
+<td><strong>Ontkenningen</strong></td>
+<td>Geen ontkenningen, of duidelijk benadrukt (NIET, GEEN)</td>
+<td>Ontkenning zonder nadruk, verwarrend</td>
+</tr>
+</tbody>
+</table>
+<p><strong>⚑ Aanscherpingen uit docentfeedback:</strong></p>
+<ul>
+<li><strong>Antwoord niet weggeven in de stam.</strong> De stam mag geen sleutelbegrippen bevatten die direct naar het juiste antwoord leiden — ook geen synoniemen, vertalingen of parafrases. Voorbeeld 1: als de vraag gaat over “gedeelde waarden” in het 7S-model, noem die term dan niet in de stam. Voorbeeld 2: vraag niet naar “zwakheden” als het antwoord “interne verbeterpunten” is — gebruik dan “de W uit de SWOT-analyse” zodat de student zelf moet weten waarvoor de letter staat.</li>
+<li><strong>Beknopte zinnen.</strong> Houd zinnen in de stam beknopt (max ~25 woorden per zin). Splits lange scenario’s op in meerdere korte zinnen. Lange, complexe zinnen maken de vraag moeilijk leesbaar zonder de moeilijkheidsgraad inhoudelijk te verhogen.</li>
+<li><strong>Gebruik vaktermen.</strong> Gebruik standaard vaktermen (bijv. “organogram”, “machinebureaucratie”) in plaats van omslachtige omschrijvingen. Omslachtige beschrijvingen maken de vraag gekunsteld en onnodig lang.</li>
+</ul>
+</section>
+<section id="het-correcte-antwoord" class="level4">
+<h4 class="anchored" data-anchor-id="het-correcte-antwoord">Het correcte antwoord</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 22%">
+<col style="width: 37%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Criterium</th>
+<th>Goed</th>
+<th>Probleem</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Onbetwistbaar</strong></td>
+<td>Feitelijk en verifieerbaar correct</td>
+<td>Discutabel of contextafhankelijk</td>
+</tr>
+<tr class="even">
+<td><strong>Specifiek</strong></td>
+<td>Direct antwoord op de vraag</td>
+<td>Te algemeen of indirect</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="de-afleiders" class="level4">
+<h4 class="anchored" data-anchor-id="de-afleiders">De afleiders</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 22%">
+<col style="width: 37%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Criterium</th>
+<th>Goed</th>
+<th>Probleem</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Plausibiliteit</strong></td>
+<td>Aantrekkelijk voor wie stof niet beheerst</td>
+<td>Overduidelijk fout of “grapjes”</td>
+</tr>
+<tr class="even">
+<td><strong>Duidelijk fout</strong></td>
+<td>Voor competente student herkenbaar als fout</td>
+<td>Discutabel of deels juist</td>
+</tr>
+<tr class="odd">
+<td><strong>Logische integriteit</strong></td>
+<td>Opties zijn wederzijds uitsluitend — precies één antwoord kan correct zijn</td>
+<td>Meerdere opties zijn tegelijk waar, of opties overlappen logisch</td>
+</tr>
+<tr class="even">
+<td><strong>Homogeniteit</strong></td>
+<td>Vergelijkbaar qua lengte, stijl, complexiteit. <strong>Uitzondering:</strong> bij korte antwoorden (1-2 woorden) mag de lengte meer variëren</td>
+<td>Correct antwoord springt eruit</td>
+</tr>
+<tr class="odd">
+<td><strong>Geen absoluten</strong></td>
+<td>Vermijdt “altijd”, “nooit”, “alle”, “geen”</td>
+<td>Bevat absolute termen (vaak fout)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Voorbeeld logische integriteitsschending:</strong></p>
+<pre><code>A) Stelling 1 is juist
+B) Stelling 2 is juist
+C) Stelling 1 en 2 zijn onjuist
+D) Stelling 1 en 2 zijn juist       ← correct antwoord</code></pre>
+<p>Als D correct is, zijn A en B automatisch ook waar. <strong>Oplossing:</strong> A en B hadden moeten luiden “<em>Uitsluitend</em> stelling 1/2 is juist”.</p>
+<p><strong>⚑ Aanscherpingen uit docentfeedback:</strong></p>
+<ul>
+<li><strong>Zelfde conceptuele domein.</strong> Afleiders moeten uit hetzelfde model, theorie of begrippencluster komen als het correcte antwoord. Bij een vraag over een specifiek element uit het 7S-model: gebruik andere 7S-elementen die semantisch dichtbij liggen (bijv. Skills, Staff), niet elementen uit een ander domein (bijv. Structuur, Systemen).</li>
+<li><strong>Plausibel bij oppervlakkige kennis.</strong> Elke afleider moet aantrekkelijk zijn voor een student die de stof globaal kent maar het concept niet diep begrijpt. De afleider moet “klinken alsof het zou kunnen kloppen”.</li>
+<li><strong>Niet discutabel.</strong> Afleiders mogen niet gedeeltelijk correct of ambigu zijn — ze moeten eenduidig onjuist zijn. Als een afleider verdedigbaar is, ondermijnt dat de betrouwbaarheid van de meting.</li>
+<li><strong>Specifiek genoeg.</strong> Afleiders mogen niet te breed of vaag zijn — ze moeten concreet genoeg zijn om als serieus alternatief te fungeren.</li>
+<li><strong>Geen triviale opties.</strong> Vermijd absurde of onzinnige antwoorden die niemand serieus zou overwegen.</li>
+<li><strong>Homogeen in lengte en stijl.</strong> Afleiders moeten qua woordenaantal (±20%) en taalstijl vergelijkbaar zijn met het correcte antwoord.</li>
+<li><strong>⚑ Misconceptie-gerichtheid.</strong> Elke afleider vertegenwoordigt een specifieke, veelvoorkomende studentmisconceptie of typische redeneerfout — niet een willekeurige permutatie of abstracte variatie van het correcte antwoord. Voorbeeld: bij een vraag over het primaire proces van een accountantskantoor, gebruik concrete processen die studenten verwarren met het primaire proces (zoals facturering of training), niet abstracte omschrijvingen van input/output-rollen.</li>
+<li><strong>⚑ Concreetheid.</strong> Antwoordopties zijn bij voorkeur concrete, herkenbare voorbeelden of scenario’s in plaats van abstracte, theoretische omschrijvingen. Concrete opties testen of de student het concept kan herkennen in de praktijk.</li>
+</ul>
+</section>
+<section id="deterministische-checks-al-automatisch-gemeten" class="level4">
+<h4 class="anchored" data-anchor-id="deterministische-checks-al-automatisch-gemeten">Deterministische checks (al automatisch gemeten)</h4>
+<p>De volgende technische aspecten zijn al gemeten door de deterministische analyzer en staan in <code>tech_kwant_*</code> kolommen. Deze hoeven niet opnieuw beoordeeld te worden:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 66%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Kolom</th>
+<th>Beschrijving</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>tech_kwant_longest_bias</code></td>
+<td>True als correct antwoord &gt;50% langer is</td>
+</tr>
+<tr class="even">
+<td><code>tech_kwant_homogeneity_score</code></td>
+<td>0-1, lager = meer lengteverschil</td>
+</tr>
+<tr class="odd">
+<td><code>tech_kwant_absolute_terms_correct</code></td>
+<td>Absolute termen in correct antwoord</td>
+</tr>
+<tr class="even">
+<td><code>tech_kwant_absolute_terms_distractors</code></td>
+<td>Absolute termen in afleiders</td>
+</tr>
+<tr class="odd">
+<td><code>tech_kwant_negation_detected</code></td>
+<td>Ontkenning gevonden in stam</td>
+</tr>
+<tr class="even">
+<td><code>tech_kwant_negation_emphasized</code></td>
+<td>Ontkenning in hoofdletters/vet</td>
+</tr>
+<tr class="odd">
+<td><code>tech_kwant_flags</code></td>
+<td>Automatisch gedetecteerde problemen</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ai-specifieke-beoordeling-niet-automatisch-meetbaar" class="level4">
+<h4 class="anchored" data-anchor-id="ai-specifieke-beoordeling-niet-automatisch-meetbaar">AI-specifieke beoordeling (niet automatisch meetbaar)</h4>
+<p>Focus op deze patronen die alleen door AI beoordeeld kunnen worden:</p>
+<ol type="1">
+<li><strong>Plausibiliteit afleiders</strong>: Zijn de foute antwoorden geloofwaardig voor studenten die de stof niet beheersen?</li>
+<li><strong>Flauwekul-opties</strong>: Zijn er afleiders die niemand serieus neemt?</li>
+<li><strong>“Alle bovenstaande”</strong>: Is er een complexe optie die testwijsheid beloont?</li>
+<li><strong>Grammaticale hints</strong>: Past het correct antwoord grammaticaal beter bij de stam?</li>
+<li><strong>Semantische helderheid stam</strong>: Is de vraag duidelijk zonder de opties te lezen?</li>
+<li><strong>Logische integriteit</strong>: Zijn de opties wederzijds uitsluitend? Controleer vooral bij stellingvragen of combinatie-opties niet logisch overlappen met individuele opties.</li>
+</ol>
+</section>
+<section id="scoringsmethodiek-2" class="level4">
+<h4 class="anchored" data-anchor-id="scoringsmethodiek-2">Scoringsmethodiek</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Score</th>
+<th>Label</th>
+<th>Beschrijving</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>5</td>
+<td>Excellent</td>
+<td>Perfecte stam, correct antwoord en afleiders</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Goed</td>
+<td>Kleine verbeterpunten, geen majeure problemen</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Voldoende</td>
+<td>Functioneel maar verbeterbaar</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Matig</td>
+<td>Significante problemen met stam of afleiders</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>Onvoldoende</td>
+<td>Fundamentele constructieproblemen</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output-format-2" class="level4">
+<h4 class="anchored" data-anchor-id="output-format-2">Output format</h4>
+<ul>
+<li><code>tech_kwal_stam_score</code>: 1-5</li>
+<li><code>tech_kwal_afleiders_score</code>: 1-5</li>
+<li><code>tech_kwal_score</code>: 1-5 (gewogen gemiddelde)</li>
+<li><code>tech_problemen</code>: Komma-gescheiden lijst van gedetecteerde problemen</li>
+<li><code>tech_toelichting</code>: Korte motivatie (max 50 woorden)</li>
+</ul>
+<hr>
+</section>
+</section>
+</section>
+<section id="voorbeelden" class="level2">
+<h2 class="anchored" data-anchor-id="voorbeelden">3. Voorbeelden</h2>
+<section id="slecht-opgestelde-mc-vragen" class="level3">
+<h3 class="anchored" data-anchor-id="slecht-opgestelde-mc-vragen">3.1 Slecht opgestelde MC-vragen</h3>
+<section id="voorbeeld-1-afleiders-uit-verkeerd-semantisch-domein" class="level4">
+<h4 class="anchored" data-anchor-id="voorbeeld-1-afleiders-uit-verkeerd-semantisch-domein">Voorbeeld 1 — Afleiders uit verkeerd semantisch domein</h4>
+<p><strong>Stam:</strong> Binnen het 7S-model van McKinsey verwijst één van de zeven elementen naar het gedrag en de houding van het management tegenover medewerkers. Hoe wordt dit element genoemd?</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Optie</th>
+<th>Antwoord</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td>Stijl ✓</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>Structuur ✗</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td>Strategie ✗</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td>Systemen ✗</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Docentfeedback:</strong> <em>“Makkelijke vraag en makkelijke afleiders. Wellicht beter Skills of Staff als optie toevoegen ipv Structuur en Systemen.”</em></p>
+<p><strong>Analyse:</strong> De afleiders (Structuur, Strategie, Systemen) gaan duidelijk niet over gedrag/houding van management. Skills of Staff liggen semantisch dichter bij het juiste antwoord en dwingen de student tot nadenken. <em>(Schendt §2.4 Afleiders: zelfde conceptuele domein)</em></p>
+<hr>
+</section>
+<section id="voorbeeld-2-antwoord-weggegeven-in-de-stam" class="level4">
+<h4 class="anchored" data-anchor-id="voorbeeld-2-antwoord-weggegeven-in-de-stam">Voorbeeld 2 — Antwoord weggegeven in de stam</h4>
+<p><strong>Stam:</strong> Een organisatieadviseur legt aan een groep eerstejaars studenten uit hoe het 7S-model van McKinsey werkt. Ze legt daarbij de nadruk op het centrale element van het model. Wat is de functie van dit centrale element — de gedeelde waarden — binnen het 7S-model?</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 41%">
+<col style="width: 58%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Optie</th>
+<th>Antwoord</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td>Ze sturen het gedrag van medewerkers en bepalen de cultuur binnen de organisatie ✓</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>Ze beschrijven de formele structuur van de organisatie en leggen de verdeling van taken en bevoegdheden vast ✗</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td>Ze verbinden de strategie van de organisatie met de operationele doelstellingen en maken deze meetbaar voor het management ✗</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td>Ze vormen de basis voor het aantrekken en ontwikkelen van medewerkers met de juiste competenties en vaardigheden ✗</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Docentfeedback:</strong> <em>“Redelijk makkelijke vraag, wellicht naam van het centrale element niet in de vraag benoemen. Makkelijke afleiders.”</em></p>
+<p><strong>Analyse:</strong> De stam noemt expliciet “de gedeelde waarden”, waardoor de student al weet welk element bedoeld wordt. De vraag toetst dan alleen nog de functie, niet de herkenning van het element. <em>(Schendt §2.4 Stam: antwoord niet weggeven)</em></p>
+<hr>
+</section>
+<section id="voorbeeld-3-gekunstelde-omschrijving-i.p.v.-vakterm" class="level4">
+<h4 class="anchored" data-anchor-id="voorbeeld-3-gekunstelde-omschrijving-i.p.v.-vakterm">Voorbeeld 3 — Gekunstelde omschrijving i.p.v. vakterm</h4>
+<p><strong>Stam:</strong> Een nieuwe medewerker bij een middelgroot logistiek bedrijf krijgt tijdens haar introductie een schematische tekening te zien van de organisatie. Daarin staan vakjes met functienamen en lijnen die de vakjes met elkaar verbinden. Wat laat dit schema haar primair zien?</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 41%">
+<col style="width: 58%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Optie</th>
+<th>Antwoord</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td>Welke taken elke medewerker dagelijks uitvoert en hoeveel tijd daarvoor staat ✗</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>Welke afdelingen er zijn en wie verantwoording aflegt aan wie ✓</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td>Hoe de werkprocessen binnen de organisatie stap voor stap verlopen ✗</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td>Welke strategische doelen de organisatie nastreeft en wie daarvoor verantwoordelijk is ✗</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Docentfeedback:</strong> <em>“Gekunstelde vraag, beter gewoon de naam organogram gebruiken. Afleiders te makkelijk.”</em></p>
+<p><strong>Analyse:</strong> De omslachtige beschrijving (“vakjes met functienamen en lijnen”) maakt de vraag onnodig lang en gekunsteld. Gebruik gewoon de vakterm “organogram”. <em>(Schendt §2.4 Stam: gebruik vaktermen)</em></p>
+<hr>
+</section>
+<section id="voorbeeld-4-te-lange-stam-slechte-leesbaarheid" class="level4">
+<h4 class="anchored" data-anchor-id="voorbeeld-4-te-lange-stam-slechte-leesbaarheid">Voorbeeld 4 — Te lange stam, slechte leesbaarheid</h4>
+<p><strong>Stam:</strong> Een productiebedrijf heeft een systeem ingevoerd dat automatisch bijhoudt of de dagelijkse output overeenkomt met de vooraf vastgestelde doelstellingen en kwaliteitsnormen. Welke managementfunctie vervult dit systeem binnen de organisatie?</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 41%">
+<col style="width: 58%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Optie</th>
+<th>Antwoord</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td>Het opstellen van concrete doelstellingen en kwaliteitsnormen voor de dagelijkse productie ✗</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>Het coördineren van de samenwerking tussen medewerkers om de productiedoelen te realiseren ✗</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td>Het toewijzen van middelen en taken aan de juiste afdelingen binnen het productieproces ✗</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td>Het bewaken of de werkelijke resultaten overeenkomen met de vastgestelde normen ✓</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Docentfeedback:</strong> <em>“Vraag moeilijk leesbaar door lange eerste zin. Afleiders vrij makkelijk.”</em></p>
+<p><strong>Analyse:</strong> De eerste zin is te lang en complex. De afleiders zijn bovendien te makkelijk te elimineren. <em>(Schendt §2.4 Stam: beknopte zinnen + §2.3 Betrouwbaarheid: afleiders niet elimineerbaar zonder vakkennis)</em></p>
+<hr>
+</section>
+<section id="voorbeeld-5-correct-antwoord-te-voor-de-hand-liggend" class="level4">
+<h4 class="anchored" data-anchor-id="voorbeeld-5-correct-antwoord-te-voor-de-hand-liggend">Voorbeeld 5 — Correct antwoord te voor de hand liggend</h4>
+<p><strong>Stam:</strong> Een productiebedrijf analyseert zijn processen vanuit Lean-perspectief. Welke van de volgende activiteiten wordt binnen Lean beschouwd als waarde-toevoegend en dus NIET als verspilling?</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 41%">
+<col style="width: 58%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Optie</th>
+<th>Antwoord</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td>Het monteren van onderdelen tot een eindproduct waarvoor de klant betaalt ✓</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>Het controleren van producten op kwaliteitsfouten voordat ze naar de klant worden verzonden ✗</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td>Het opslaan van halffabricaten in het magazijn om te zorgen dat de productie soepel doorloopt ✗</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td>Het intern transporteren van grondstoffen van de opslaglocatie naar de productievloer ✗</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Docentfeedback:</strong> <em>“Goede antwoord is te makkelijk, afleiders choice3 en choice4 vrij makkelijk.”</em></p>
+<p><strong>Analyse:</strong> “Monteren” is zo duidelijk waarde-toevoegend dat de vraag geen onderscheidend vermogen heeft. “Opslaan” en “transporteren” zijn klassieke Lean-verspillingen die ook zonder diepgaande kennis herkenbaar zijn. <em>(Schendt §2.3 Betrouwbaarheid: correct antwoord niet te voor de hand liggend + afleiders niet elimineerbaar zonder vakkennis)</em></p>
+<hr>
+</section>
+</section>
+<section id="goed-opgestelde-mc-vragen" class="level3">
+<h3 class="anchored" data-anchor-id="goed-opgestelde-mc-vragen">3.2 Goed opgestelde MC-vragen</h3>
+<section id="voorbeeld-1-plausibele-afleiders-uit-zelfde-raamwerk" class="level4">
+<h4 class="anchored" data-anchor-id="voorbeeld-1-plausibele-afleiders-uit-zelfde-raamwerk">Voorbeeld 1 — Plausibele afleiders uit zelfde raamwerk</h4>
+<p><strong>Stam:</strong> Een bedrijfskundestudent bestudeert het VRIO-raamwerk. Wat is de centrale vraag die hoort bij de eerste letter van dit model?</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 41%">
+<col style="width: 58%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Optie</th>
+<th>Antwoord</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td>Levert de resource een bijdrage aan het voldoen aan de behoeften van klanten of het benutten van kansen in de markt? ✓</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>Beschikt de organisatie over voldoende financiële middelen om de resource op lange termijn te onderhouden en verder te ontwikkelen? ✗</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td>Is de resource moeilijk te imiteren door concurrenten, zodat de organisatie een duurzaam concurrentievoordeel kan behouden? ✗</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td>Beschikt de organisatie over de juiste processen en structuren om de resource effectief in te zetten voor het behalen van strategische doelen? ✗</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Docentfeedback:</strong> <em>“oké”</em></p>
+<p><strong>Analyse:</strong> Alle afleiders gaan over resource-gerelateerde vragen die binnen het VRIO-raamwerk passen. Afleider C beschrijft de I (Imitability) en D de O (Organization) — studenten moeten echt weten welke vraag bij welke letter hoort. <em>(Voldoet aan §2.4 Afleiders: zelfde conceptuele domein, plausibel, niet elimineerbaar zonder vakkennis)</em></p>
+<hr>
+</section>
+<section id="voorbeeld-2-helder-scenario-met-plausibele-alternatieven" class="level4">
+<h4 class="anchored" data-anchor-id="voorbeeld-2-helder-scenario-met-plausibele-alternatieven">Voorbeeld 2 — Helder scenario met plausibele alternatieven</h4>
+<p><strong>Stam:</strong> Een productiebedrijf dat keukenmachines assembleert, merkt dat er regelmatig grote voorraden halffabrikaten opstapelen tussen de verschillende productiestations. Hierdoor lopen de doorlooptijden op en ontstaan er vertragingen bij de levering aan klanten. De operationeel manager wil het productieproces verbeteren volgens LEAN-principes. Welke aanpak sluit hier het beste op aan?</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 41%">
+<col style="width: 58%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Optie</th>
+<th>Antwoord</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td>De capaciteit van elk productiestation verhogen door meer medewerkers in te zetten zodat de voorraden sneller worden verwerkt ✗</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>De productie opdelen in kleinere series zodat halffabrikaten sneller doorstromen naar het volgende station ✓</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td>Een centraal voorraadpunt inrichten tussen de productiestations zodat halffabrikaten gecontroleerd worden opgeslagen en gebufferd ✗</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td>De productieplanning optimaliseren door grotere series tegelijk te produceren zodat omsteltijden tussen de stations worden verminderd ✗</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Docentfeedback:</strong> <em>“oké”</em></p>
+<p><strong>Analyse:</strong> Alle afleiders zijn logisch klinkende bedrijfskundige oplossingen. Afleider A (meer capaciteit) en D (grotere series) zijn plausibele maar niet-Lean-oplossingen. Afleider C gaat juist tegen het Lean-principe in (buffering = verspilling), maar klinkt voor een onoplettende student als een redelijke aanpak. <em>(Voldoet aan §2.4 Afleiders: zelfde conceptuele domein, plausibel, specifiek + §2.3 Betrouwbaarheid: hoog discriminerend vermogen)</em></p>
+<hr>
+</section>
+<section id="voorbeeld-3-subtiele-fout-in-afleider-vereist-goed-lezen" class="level4">
+<h4 class="anchored" data-anchor-id="voorbeeld-3-subtiele-fout-in-afleider-vereist-goed-lezen">Voorbeeld 3 — Subtiele fout in afleider vereist goed lezen</h4>
+<p><strong>Stam:</strong> Een groot productiebedrijf werkt met strakke protocollen, vaste taakomschrijvingen en uitgebreide goedkeuringsprocedures. Welk nadeel hoort kenmerkend bij dit type organisatie-inrichting?</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 41%">
+<col style="width: 58%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Optie</th>
+<th>Antwoord</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td>De organisatie heeft moeite om medewerkers te motiveren, omdat vaste taakomschrijvingen zorgen voor te veel autonomie en onduidelijkheid over verantwoordelijkheden ✗</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>De organisatie heeft moeite om snel in te spelen op veranderingen in de omgeving door de vele vaste procedures ✓</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td>De organisatie kampt met hoge productiekosten, omdat strakke protocollen leiden tot inefficiënte inzet van machines en grondstoffen ✗</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td>De organisatie heeft moeite om eenheid in de aansturing te bewaken, omdat uitgebreide goedkeuringsprocedures leiden tot versnippering van beslissingsbevoegdheden ✗</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Docentfeedback:</strong> <em>“oké”</em></p>
+<p><strong>Analyse:</strong> Afleider A bevat een subtiele fout (“te veel autonomie” — juist het omgekeerde is het geval bij strakke protocollen). De student moet goed lezen om dit te herkennen. Afleiders C en D klinken plausibel maar beschrijven geen kenmerkend nadeel van bureaucratische organisaties. <em>(Voldoet aan §2.4 Afleiders: plausibel, niet discutabel + §2.3 Betrouwbaarheid: hoog discriminerend vermogen)</em></p>
+<hr>
+</section>
+</section>
+</section>
+<section id="workflow-van-vragenbank-naar-toets" class="level2">
+<h2 class="anchored" data-anchor-id="workflow-van-vragenbank-naar-toets">4. Workflow: van vragenbank naar toets</h2>
+<section id="overzicht" class="level3">
+<h3 class="anchored" data-anchor-id="overzicht">4.1 Overzicht</h3>
+<pre><code>Vragenbank (CSV)
+    │
+    ▼
+Stap 1 – Opschonen bronbestand
+    │
+    ▼
+Stap 2 – Gestratificeerde aselecte steekproef
+    │
+    ▼
+Stap 3 – Genereer nieuwe vraagvarianten (Claude API)
+    │
+    ▼
+Stap 4 – Converteer stellingvragen naar reguliere MC
+    │
+    ▼
+Stap 5 – Genereer afleiders (Claude API)
+    │
+    ▼
+Toets-CSV klaar voor export</code></pre>
+</section>
+<section id="vereisten" class="level3">
+<h3 class="anchored" data-anchor-id="vereisten">4.2 Vereisten</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 55%">
+<col style="width: 45%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Bronbestand</td>
+<td>CSV met beoordeelde MC-vragen, kolom <code>oordeel</code> (GOED/EXCELLENT), kolom <code>criterium_omschrijving</code> met wegingspercentage in haakjes</td>
+</tr>
+<tr class="even">
+<td>Python</td>
+<td>3.10+</td>
+</tr>
+<tr class="odd">
+<td>Packages</td>
+<td><code>anthropic</code> (<code>pip install anthropic</code>)</td>
+</tr>
+<tr class="even">
+<td>API-sleutel</td>
+<td><code>ANTHROPIC_API_KEY</code> als omgevingsvariabele (sla op in <code>.env.local</code>, staat in <code>.gitignore</code>)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="stap-1-opschonen-bronbestand" class="level3">
+<h3 class="anchored" data-anchor-id="stap-1-opschonen-bronbestand">4.3 Stap 1 – Opschonen bronbestand</h3>
+<p>Verwijder lege of incomplete rijen onderaan het bronbestand (spreadsheet-artefacten).</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Behoud alleen de eerste N regels (1 header + N-1 datarijen)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-822</span> bronbestand.csv <span class="op">&gt;</span> bronbestand_clean.csv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Controle:</strong> <code>wc -l bronbestand_clean.csv</code> moet het verwachte aantal regels tonen.</p>
+<hr>
+</section>
+<section id="stap-2-gestratificeerde-aselecte-steekproef" class="level3">
+<h3 class="anchored" data-anchor-id="stap-2-gestratificeerde-aselecte-steekproef">4.4 Stap 2 – Gestratificeerde aselecte steekproef</h3>
+<p>Trek een steekproef waarbij de verdeling van leerdoelen de voorgeschreven wegingen volgt.</p>
+<p><strong>Bereken het aantal vragen per leerdoel:</strong></p>
+<pre><code>aantal_vragen = totaal_toetsvragen × weging_percentage</code></pre>
+<p>Voorbeeld voor een toets van 40 vragen:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Leerdoel</th>
+<th>Weging</th>
+<th>Vragen</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Strategisch management</td>
+<td>40%</td>
+<td>16</td>
+</tr>
+<tr class="even">
+<td>Omgevingsanalyse</td>
+<td>15%</td>
+<td>6</td>
+</tr>
+<tr class="odd">
+<td>Marketing</td>
+<td>15%</td>
+<td>6</td>
+</tr>
+<tr class="even">
+<td>Bedrijfskundige stromingen</td>
+<td>15%</td>
+<td>6</td>
+</tr>
+<tr class="odd">
+<td>Meervoudige waardecreatie</td>
+<td>15%</td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Script (Python):</strong></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> csv, random, re</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> defaultdict</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>random.seed(<span class="dv">42</span>)  <span class="co"># Reproduceerbaar</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>QUOTA <span class="op">=</span> {</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Strategisch management'</span>: <span class="dv">16</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Omgevingsanalyse'</span>: <span class="dv">6</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Marketing'</span>: <span class="dv">6</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Bedrijfskundige stromingen'</span>: <span class="dv">6</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Meervoudige waardecreatie'</span>: <span class="dv">6</span>,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>groups <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(<span class="st">'bronbestand_clean.csv'</span>, encoding<span class="op">=</span><span class="st">'utf-8-sig'</span>) <span class="im">as</span> f:</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    reader <span class="op">=</span> csv.DictReader(f, delimiter<span class="op">=</span><span class="st">';'</span>)</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> row <span class="kw">in</span> reader:</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> row[<span class="st">'oordeel'</span>].strip() <span class="kw">not</span> <span class="kw">in</span> (<span class="st">'GOED'</span>, <span class="st">'EXCELLENT'</span>):</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        short <span class="op">=</span> row[<span class="st">'criterium_omschrijving'</span>].strip().strip(<span class="st">'"'</span>).split(<span class="st">':'</span>)[<span class="dv">0</span>].strip()</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> short <span class="kw">in</span> QUOTA:</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>            groups[short].append(row)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>sample <span class="op">=</span> []</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> leerdoel, n <span class="kw">in</span> QUOTA.items():</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    sample.extend(random.sample(groups[leerdoel], n))</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>random.shuffle(sample)</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Exporteer naar sample.csv</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Controle:</strong> - Totaal = gewenst aantal vragen - Verdeling per leerdoel klopt - Geen dubbele <code>vraag_id</code>’s</p>
+<hr>
+</section>
+<section id="stap-3-genereer-nieuwe-vraagvarianten" class="level3">
+<h3 class="anchored" data-anchor-id="stap-3-genereer-nieuwe-vraagvarianten">4.5 Stap 3 – Genereer nieuwe vraagvarianten</h3>
+<p>Herschrijf elke vraag via de Claude API zodat de formulering tekstueel nieuw is, maar het leerdoel, Bloom-niveau en correct-antwoord-concept behouden blijven.</p>
+<p><strong>Model:</strong> <code>claude-sonnet-4-5-20250929</code> <strong>Temperature:</strong> <code>0.5</code> <strong>Structured output:</strong> via <code>tool_choice</code></p>
+<p><strong>Kern van de user-prompt per vraag:</strong></p>
+<pre><code>Genereer een NIEUWE MC-vraag over het volgende:
+
+Leerdoel: [criterium_omschrijving]
+Cognitief niveau: [validiteit_cognitief_niveau]
+Correct antwoord-concept: [correct_antwoord]
+Vraagtype: regulier
+
+ORIGINELE VRAAG (gebruik alleen als referentie voor het concept):
+Stam: [stam]
+Correct antwoord: [correct_antwoord]
+
+Regels:
+- Gebruik een ander scenario, andere context en andere bewoordingen
+- Maak het realistisch voor eerstejaars bedrijfskundeleerlingen
+- 4 homogene antwoordopties, precies 1 correct
+- Geen absolute termen, geen lengte-bias
+
+Kwaliteitseisen stam (zie §2.4):
+- Geef het antwoord NIET weg in de vraagstelling — noem geen sleutelbegrippen die direct naar het juiste antwoord leiden
+- Houd zinnen in de stam beknopt (max ~25 woorden per zin). Splits lange scenario's op in meerdere korte zinnen
+- Gebruik standaard vaktermen (bijv. "organogram", "machinebureaucratie") in plaats van omslachtige omschrijvingen
+
+Kwaliteitseisen afleiders (zie §2.4):
+- Afleiders moeten uit hetzelfde conceptuele domein komen als het correcte antwoord (bijv. bij een vraag over een specifiek element uit het 7S-model, gebruik andere 7S-elementen die semantisch dichtbij liggen)
+- Elke afleider moet plausibel klinken voor een student die de stof oppervlakkig kent maar het concept niet diep begrijpt
+- Afleiders mogen NIET discutabel of gedeeltelijk correct zijn — ze moeten eenduidig onjuist zijn
+- Afleiders mogen niet op basis van algemene kennis (zonder vakkennis) al uitgesloten kunnen worden
+- Elke afleider vertegenwoordigt een specifieke studentmisconceptie of typische redeneerfout — geen willekeurige permutaties of abstracte variaties
+- Gebruik bij voorkeur concrete voorbeelden of scenario's als antwoordopties, geen abstracte theoretische omschrijvingen</code></pre>
+<p><strong>Tool-schema output:</strong></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"stam"</span><span class="fu">:</span> <span class="st">"string"</span><span class="fu">,</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"stelling_1"</span><span class="fu">:</span> <span class="st">"string|null"</span><span class="fu">,</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"stelling_2"</span><span class="fu">:</span> <span class="st">"string|null"</span><span class="fu">,</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"antwoord_a"</span><span class="fu">:</span> <span class="st">"string"</span><span class="fu">,</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"antwoord_b"</span><span class="fu">:</span> <span class="st">"string"</span><span class="fu">,</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"antwoord_c"</span><span class="fu">:</span> <span class="st">"string"</span><span class="fu">,</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"antwoord_d"</span><span class="fu">:</span> <span class="st">"string"</span><span class="fu">,</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"correct_antwoord"</span><span class="fu">:</span> <span class="st">"string"</span><span class="fu">,</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"correct_antwoord_choice"</span><span class="fu">:</span> <span class="st">"choice1|choice2|choice3|choice4"</span><span class="fu">,</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"toelichting"</span><span class="fu">:</span> <span class="st">"string"</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Script:</strong> <code>temp/generate_new_questions.py</code></p>
+<p><strong>Controle:</strong> - Alle 40 rijen hebben een gevulde <code>stam</code> - Oordeel = <code>EXCELLENT</code> voor alle rijen</p>
+<hr>
+</section>
+<section id="stap-4-converteer-stellingvragen-naar-reguliere-mc" class="level3">
+<h3 class="anchored" data-anchor-id="stap-4-converteer-stellingvragen-naar-reguliere-mc">4.6 Stap 4 – Converteer stellingvragen naar reguliere MC</h3>
+<p>Detecteer stellingvragen (rijen met gevulde <code>stelling_1</code>) en genereer voor elk een directe MC-vraag die hetzelfde concept toetst.</p>
+<p><strong>Detectie:</strong></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>is_stelling <span class="op">=</span> <span class="bu">bool</span>(row.get(<span class="st">'stelling_1'</span>, <span class="st">''</span>).strip())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Kern van de user-prompt:</strong></p>
+<pre><code>Zet de volgende stellingvraag om naar een REGULIERE MC-vraag.
+
+Stelling 1: [stelling_1]
+Stelling 2: [stelling_2]
+Correct antwoord: [correct_antwoord]
+Wat getoetst moet worden: [afleiden uit juiste stelling(en)]
+
+Regels:
+- Directe vraag of onvolledige zin (geen stellingsformaat)
+- Ander scenario dan de originele stellingen
+- 4 homogene opties, cognitief niveau: [validiteit_cognitief_niveau]</code></pre>
+<p><strong>Script:</strong> <code>temp/convert_stelling_to_mc.py</code></p>
+<p><strong>Controle:</strong> - Resterende stellingvragen = 0 - Geen lege stam-velden</p>
+<hr>
+</section>
+<section id="stap-5-genereer-afleiders" class="level3">
+<h3 class="anchored" data-anchor-id="stap-5-genereer-afleiders">4.7 Stap 5 – Genereer afleiders</h3>
+<p>Voeg drie plausibele, kwalitatieve afleiders toe per vraag. Randomiseer de positie van het correcte antwoord.</p>
+<p><strong>Model:</strong> <code>claude-sonnet-4-5-20250929</code> <strong>Temperature:</strong> <code>0.5</code></p>
+<p><strong>Kwaliteitseisen afleiders</strong> (zie §2.3 en §2.4 voor volledige toelichting):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 68%">
+<col style="width: 31%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Criterium</th>
+<th>Eis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Zelfde conceptueel domein</td>
+<td>Afleiders komen uit hetzelfde model/theorie/begrippencluster als het correcte antwoord</td>
+</tr>
+<tr class="even">
+<td>Plausibiliteit</td>
+<td>Aantrekkelijk voor wie de stof niet beheerst</td>
+</tr>
+<tr class="odd">
+<td>Niet discutabel</td>
+<td>Eenduidig onjuist, geen overlap met correct antwoord</td>
+</tr>
+<tr class="even">
+<td>Niet elimineerbaar zonder vakkennis</td>
+<td>Niet uitsluitbaar op basis van algemene kennis alleen</td>
+</tr>
+<tr class="odd">
+<td>Homogeniteit</td>
+<td>Vergelijkbaar in lengte en stijl met correct antwoord (±20% woorden)</td>
+</tr>
+<tr class="even">
+<td>Logische integriteit</td>
+<td>Wederzijds uitsluitend, geen overlap</td>
+</tr>
+<tr class="odd">
+<td>Geen absolute termen</td>
+<td>Vermijd “altijd”, “nooit”, “alle”, “geen”</td>
+</tr>
+<tr class="even">
+<td>Geen triviale opties</td>
+<td>Geen absurde of onzinnige antwoorden</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tool-schema output:</strong></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"afleider_1"</span><span class="fu">:</span> <span class="st">"string"</span><span class="fu">,</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"afleider_2"</span><span class="fu">:</span> <span class="st">"string"</span><span class="fu">,</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"afleider_3"</span><span class="fu">:</span> <span class="st">"string"</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Positie-randomisatie:</strong> op basis van <code>hashlib.md5(vraag_id)</code> → reproduceerbaar, geen aangrenzende bias.</p>
+<p><strong>Script:</strong> <code>temp/generate_distractors.py</code></p>
+<p><strong>Controle:</strong></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Alle opties gevuld</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">all</span>(row[<span class="ss">f'antwoord_</span><span class="sc">{</span>x<span class="sc">}</span><span class="ss">'</span>] <span class="cf">for</span> x <span class="kw">in</span> <span class="st">'abcd'</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Correct antwoord op juiste positie</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>keuze_map <span class="op">=</span> {<span class="st">'choice1'</span>:<span class="st">'a'</span>,<span class="st">'choice2'</span>:<span class="st">'b'</span>,<span class="st">'choice3'</span>:<span class="st">'c'</span>,<span class="st">'choice4'</span>:<span class="st">'d'</span>}</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> row[<span class="ss">f'antwoord_</span><span class="sc">{</span>keuze_map[row[<span class="st">"correct_antwoord_choice"</span>]]<span class="sc">}</span><span class="ss">'</span>] <span class="op">==</span> row[<span class="st">'correct_antwoord'</span>]</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Geen duplicaten binnen een vraag</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>({row[<span class="ss">f'antwoord_</span><span class="sc">{</span>x<span class="sc">}</span><span class="ss">'</span>] <span class="cf">for</span> x <span class="kw">in</span> <span class="st">'abcd'</span>}) <span class="op">==</span> <span class="dv">4</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+<section id="eindresultaat" class="level3">
+<h3 class="anchored" data-anchor-id="eindresultaat">4.8 Eindresultaat</h3>
+<p>Een CSV met de volgende gevulde kolommen per vraag:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Kolom</th>
+<th>Inhoud</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>criterium_omschrijving</code></td>
+<td>Leerdoel met weging</td>
+</tr>
+<tr class="even">
+<td><code>vraag_id</code></td>
+<td><code>GEN_[origineel_id]</code></td>
+</tr>
+<tr class="odd">
+<td><code>stam</code></td>
+<td>Nieuwe vraagstam</td>
+</tr>
+<tr class="even">
+<td><code>correct_antwoord</code></td>
+<td>Tekst correct antwoord</td>
+</tr>
+<tr class="odd">
+<td><code>correct_antwoord_choice</code></td>
+<td><code>choice1</code>–<code>choice4</code></td>
+</tr>
+<tr class="even">
+<td><code>antwoord_a</code> t/m <code>antwoord_d</code></td>
+<td>Alle vier opties</td>
+</tr>
+<tr class="odd">
+<td><code>validiteit_cognitief_niveau</code></td>
+<td>Bloom-niveau</td>
+</tr>
+<tr class="even">
+<td><code>oordeel</code></td>
+<td><code>EXCELLENT</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="scripts-overzicht" class="level3">
+<h3 class="anchored" data-anchor-id="scripts-overzicht">4.9 Scripts overzicht</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 57%">
+<col style="width: 42%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Script</th>
+<th>Doel</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>temp/generate_new_questions.py</code></td>
+<td>Stap 3: genereer nieuwe vraagvarianten</td>
+</tr>
+<tr class="even">
+<td><code>temp/convert_stelling_to_mc.py</code></td>
+<td>Stap 4: stellingvragen → reguliere MC</td>
+</tr>
+<tr class="odd">
+<td><code>temp/generate_distractors.py</code></td>
+<td>Stap 5: afleiders genereren</td>
+</tr>
+</tbody>
+</table>
+<p>Voer elk script uit vanuit de <code>temp/</code> map:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> temp/</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">$(</span><span class="fu">cat</span> ../.env.local <span class="kw">|</span> <span class="fu">xargs</span><span class="va">)</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> generate_new_questions.py</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> convert_stelling_to_mc.py</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> generate_distractors.py</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

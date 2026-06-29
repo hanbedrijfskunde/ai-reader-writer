@@ -1,0 +1,26 @@
+# Secrets / API-keys — NOOIT committen
+.env
+.env.local
+*.key
+
+# Auteursrechtelijk beschermd lesmateriaal — niet naar (publieke) repo
+source-docs/
+design-documents/*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# Lokale app-staat / output
+*.sqlite
+*.sqlite3
+output/
+.DS_Store
+
+# Editor
+.vscode/
