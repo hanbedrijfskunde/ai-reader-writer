@@ -9,6 +9,9 @@ class Project:
     name: str
     status: str = "concept"
     bloom_level: str | None = None
+    reader_title: str | None = None
+    module_code: str | None = None
+    academic_year: str | None = None
 
 
 @dataclass

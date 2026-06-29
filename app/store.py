@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS projects (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'concept',
-    bloom_level TEXT
+    bloom_level TEXT,
+    reader_title TEXT,
+    module_code TEXT,
+    academic_year TEXT
 );
 CREATE TABLE IF NOT EXISTS sources (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,6 +52,21 @@ class Store:
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA foreign_keys = ON")
         self._conn.executescript(_SCHEMA)
+        self._ensure_project_columns()
+        self._conn.commit()
+
+    # Columns added after the first release; ALTER them onto pre-existing DBs.
+    _PROJECT_META_COLS = {
+        "reader_title": "TEXT",
+        "module_code": "TEXT",
+        "academic_year": "TEXT",
+    }
+
+    def _ensure_project_columns(self) -> None:
+        existing = {r["name"] for r in self._conn.execute("PRAGMA table_info(projects)")}
+        for col, col_type in self._PROJECT_META_COLS.items():
+            if col not in existing:
+                self._conn.execute(f"ALTER TABLE projects ADD COLUMN {col} {col_type}")
         self._conn.commit()
 
     def create_project(self, name: str) -> Project:
@@ -58,16 +76,32 @@ class Store:
 
     def get_project(self, project_id: int) -> Project:
         row = self._conn.execute(
-            "SELECT id, name, status, bloom_level FROM projects WHERE id = ?",
+            "SELECT id, name, status, bloom_level, reader_title, module_code, "
+            "academic_year FROM projects WHERE id = ?",
             (project_id,),
         ).fetchone()
         if row is None:
             raise KeyError(f"project {project_id} not found")
         return Project(id=row["id"], name=row["name"], status=row["status"],
-                       bloom_level=row["bloom_level"])
+                       bloom_level=row["bloom_level"], reader_title=row["reader_title"],
+                       module_code=row["module_code"], academic_year=row["academic_year"])
 
     def set_status(self, project_id: int, status: str) -> None:
         self._conn.execute("UPDATE projects SET status = ? WHERE id = ?", (status, project_id))
+        self._conn.commit()
+
+    def set_meta(
+        self,
+        project_id: int,
+        reader_title: str | None,
+        module_code: str | None,
+        academic_year: str | None,
+    ) -> None:
+        self._conn.execute(
+            "UPDATE projects SET reader_title = ?, module_code = ?, academic_year = ? "
+            "WHERE id = ?",
+            (reader_title, module_code, academic_year, project_id),
+        )
         self._conn.commit()
 
     def set_bloom_level(self, project_id: int, level: str) -> None:

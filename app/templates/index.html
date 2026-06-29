@@ -11,6 +11,26 @@
 <body>
   <h1>AI Reader &amp; Writer</h1>
 
+  <h2>Reader-gegevens</h2>
+  <form hx-post="/meta" hx-target="#meta-result">
+    <p>
+      <label>Titel<br>
+        <input type="text" name="reader_title" size="40"
+               value="{{ project.reader_title or '' }}"
+               placeholder="Titel van de reader"></label>
+    </p>
+    <p>
+      <label>Modulecode
+        <input type="text" name="module_code"
+               value="{{ project.module_code or '' }}" placeholder="BK-101"></label>
+      <label>Collegejaar
+        <input type="text" name="academic_year"
+               value="{{ project.academic_year or '' }}" placeholder="2025-2026"></label>
+    </p>
+    <button type="submit">Opslaan</button>
+    <span id="meta-result"></span>
+  </form>
+
   <h2>PDF toevoegen</h2>
   <form hx-post="/sources/pdf" hx-encoding="multipart/form-data" hx-target="#source-list" hx-swap="outerHTML">
     <input type="file" name="file" accept="application/pdf" required>

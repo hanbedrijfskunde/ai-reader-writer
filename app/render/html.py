@@ -28,10 +28,12 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   .page-img {{ display: block; width: 100%; box-shadow: 0 0 4px #ccc; margin: 1rem 0; }}
   .video img {{ max-width: 480px; width: 100%; border-radius: 8px; }}
   .synopsis {{ color: #333; }}
+  .reader-meta {{ color: #666; margin-top: -0.5rem; font-size: 0.95rem; }}
 </style>
 </head>
 <body>
 <h1>{title}</h1>
+{subtitle}
 {body}
 </body>
 </html>
@@ -77,7 +79,14 @@ def _render_document(s: Source, out_dir: Path, render_pdf_pages) -> str:
     )
 
 
-def render_reader(project_name: str, sources: list[Source], out_dir: Path, *, render_pdf_pages) -> Path:
+def render_reader(
+    project_name: str,
+    sources: list[Source],
+    out_dir: Path,
+    *,
+    render_pdf_pages,
+    subtitle: str | None = None,
+) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     blocks: list[str] = []
     for s in sources:
@@ -88,7 +97,14 @@ def render_reader(project_name: str, sources: list[Source], out_dir: Path, *, re
         else:
             blocks.append(_render_document(s, out_dir, render_pdf_pages))
 
-    page = _PAGE_TEMPLATE.format(title=_html.escape(project_name), body="\n".join(blocks))
+    subtitle_html = (
+        f'<p class="reader-meta">{_html.escape(subtitle)}</p>' if subtitle else ""
+    )
+    page = _PAGE_TEMPLATE.format(
+        title=_html.escape(project_name),
+        subtitle=subtitle_html,
+        body="\n".join(blocks),
+    )
     out = out_dir / "index.html"
     out.write_text(page, encoding="utf-8")
     return out

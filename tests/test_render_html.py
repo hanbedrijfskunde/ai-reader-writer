@@ -89,3 +89,27 @@ def test_render_strips_javascript_url_scheme(tmp_path):
     content = out.read_text(encoding="utf-8")
     assert "javascript:alert(1)" not in content
     assert 'href=""' in content  # scheme allowlisted to empty
+
+
+def test_render_includes_subtitle(tmp_path):
+    out = html.render_reader("Mijn Titel", [], tmp_path,
+                             render_pdf_pages=lambda fn: [],
+                             subtitle="BK-101 · 2025-2026")
+    content = out.read_text(encoding="utf-8")
+    assert "<h1>Mijn Titel</h1>" in content
+    assert "BK-101 · 2025-2026" in content
+    assert 'class="reader-meta"' in content
+
+
+def test_render_escapes_subtitle(tmp_path):
+    out = html.render_reader("T", [], tmp_path, render_pdf_pages=lambda fn: [],
+                             subtitle="<script>x</script>")
+    content = out.read_text(encoding="utf-8")
+    assert "<script>x</script>" not in content
+    assert "&lt;script&gt;" in content
+
+
+def test_render_without_subtitle_has_no_meta(tmp_path):
+    out = html.render_reader("T", [], tmp_path, render_pdf_pages=lambda fn: [])
+    content = out.read_text(encoding="utf-8")
+    assert 'class="reader-meta"' not in content
