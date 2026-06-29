@@ -139,3 +139,37 @@ def test_questions_cascade_on_source_delete(tmp_path):
     store.add_question(s.id, "Q")
     store.remove_source(s.id)
     assert store.list_questions(s.id) == []
+
+
+def test_set_quote_roundtrip(tmp_path):
+    store = Store(tmp_path / "t.sqlite")
+    p = store.create_project("M")
+    s = store.add_source(p.id, Source(
+        id=0, project_id=0, kind="document", title="D", position=0,
+        included=True, text="body", filename="d.pdf", page_count=1,
+    ))
+    assert store.list_sources(p.id)[0].quote is None
+    store.set_quote(s.id, "Een pakkende zin.")
+    assert store.list_sources(p.id)[0].quote == "Een pakkende zin."
+
+
+def test_quote_migration_on_legacy_sources(tmp_path):
+    import sqlite3
+    db = tmp_path / "legacy.sqlite"
+    conn = sqlite3.connect(db)
+    conn.executescript(
+        "CREATE TABLE projects (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,"
+        " status TEXT NOT NULL DEFAULT 'concept', bloom_level TEXT);"
+        "CREATE TABLE sources (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL,"
+        " kind TEXT NOT NULL, title TEXT NOT NULL, position INTEGER NOT NULL,"
+        " included INTEGER NOT NULL DEFAULT 1, text TEXT NOT NULL DEFAULT '',"
+        " filename TEXT, page_count INTEGER, youtube_url TEXT, video_id TEXT,"
+        " channel TEXT, duration TEXT, thumbnail_url TEXT, synopsis TEXT);"
+        "INSERT INTO projects (name) VALUES ('Oud');"
+        "INSERT INTO sources (project_id, kind, title, position) VALUES (1,'document','D',0);"
+    )
+    conn.commit()
+    conn.close()
+    store = Store(db)  # opening must add the quote column
+    store.set_quote(1, "Q")
+    assert store.list_sources(1)[0].quote == "Q"

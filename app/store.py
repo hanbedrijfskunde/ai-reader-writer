@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS sources (
     channel TEXT,
     duration TEXT,
     thumbnail_url TEXT,
-    synopsis TEXT
+    synopsis TEXT,
+    quote TEXT
 );
 CREATE TABLE IF NOT EXISTS questions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +44,7 @@ CREATE TABLE IF NOT EXISTS questions (
 _SOURCE_COLS = [
     "id", "project_id", "kind", "title", "position", "included", "text",
     "filename", "page_count", "youtube_url", "video_id", "channel",
-    "duration", "thumbnail_url", "synopsis",
+    "duration", "thumbnail_url", "synopsis", "quote",
 ]
 
 
@@ -59,6 +60,7 @@ class Store:
         self._conn.execute("PRAGMA foreign_keys = ON")
         self._conn.executescript(_SCHEMA)
         self._ensure_project_columns()
+        self._ensure_source_columns()
         self._conn.commit()
 
     # Columns added after the first release; ALTER them onto pre-existing DBs.
@@ -73,6 +75,15 @@ class Store:
         for col, col_type in self._PROJECT_META_COLS.items():
             if col not in existing:
                 self._conn.execute(f"ALTER TABLE projects ADD COLUMN {col} {col_type}")
+        self._conn.commit()
+
+    _SOURCE_META_COLS = {"quote": "TEXT"}
+
+    def _ensure_source_columns(self) -> None:
+        existing = {r["name"] for r in self._conn.execute("PRAGMA table_info(sources)")}
+        for col, col_type in self._SOURCE_META_COLS.items():
+            if col not in existing:
+                self._conn.execute(f"ALTER TABLE sources ADD COLUMN {col} {col_type}")
         self._conn.commit()
 
     def create_project(self, name: str) -> Project:
@@ -128,13 +139,13 @@ class Store:
             """INSERT INTO sources
                (project_id, kind, title, position, included, text, filename,
                 page_count, youtube_url, video_id, channel, duration,
-                thumbnail_url, synopsis)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                thumbnail_url, synopsis, quote)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (project_id, source.kind, source.title, next_pos,
              int(source.included), source.text, source.filename,
              source.page_count, source.youtube_url, source.video_id,
              source.channel, source.duration, source.thumbnail_url,
-             source.synopsis),
+             source.synopsis, source.quote),
         )
         self._conn.commit()
         row = self._conn.execute(
@@ -158,6 +169,12 @@ class Store:
     def set_source_text(self, source_id: int, text: str) -> None:
         self._conn.execute(
             "UPDATE sources SET text = ? WHERE id = ?", (text, source_id)
+        )
+        self._conn.commit()
+
+    def set_quote(self, source_id: int, quote: str | None) -> None:
+        self._conn.execute(
+            "UPDATE sources SET quote = ? WHERE id = ?", (quote, source_id)
         )
         self._conn.commit()
 
