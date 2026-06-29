@@ -32,6 +32,7 @@ class Source:
     thumbnail_url: str | None = None
     synopsis: str | None = None
     quote: str | None = None
+    processing: bool = False
 
 
 @dataclass

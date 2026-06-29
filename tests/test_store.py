@@ -173,3 +173,38 @@ def test_quote_migration_on_legacy_sources(tmp_path):
     store = Store(db)  # opening must add the quote column
     store.set_quote(1, "Q")
     assert store.list_sources(1)[0].quote == "Q"
+
+
+def test_processing_migration_and_finish_video(tmp_path):
+    store = Store(tmp_path / "t.sqlite")
+    p = store.create_project("M")
+    s = store.add_source(p.id, Source(
+        id=0, project_id=0, kind="video", title="Video wordt opgehaald…",
+        position=0, included=True, text="", youtube_url="https://y/x",
+        processing=True,
+    ))
+    assert store.list_sources(p.id)[0].processing is True
+    store.finish_video(
+        s.id, title="Echte titel", video_id="x", channel="Ch",
+        duration="1:00", thumbnail_url="https://t/t.jpg",
+        text="transcript", synopsis="syn", quote="een citaat",
+    )
+    got = store.list_sources(p.id)[0]
+    assert got.processing is False
+    assert got.title == "Echte titel"
+    assert got.synopsis == "syn"
+    assert got.quote == "een citaat"
+    assert got.text == "transcript"
+    assert got.thumbnail_url == "https://t/t.jpg"
+
+
+def test_finish_video_failure_path(tmp_path):
+    store = Store(tmp_path / "t.sqlite")
+    p = store.create_project("M")
+    s = store.add_source(p.id, Source(
+        id=0, project_id=0, kind="video", title="Video wordt opgehaald…",
+        position=0, included=True, text="", processing=True,
+    ))
+    store.finish_video(s.id, title="Ophalen mislukt")
+    got = store.list_sources(p.id)[0]
+    assert got.processing is False and got.title == "Ophalen mislukt"
