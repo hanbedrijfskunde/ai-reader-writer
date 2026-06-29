@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from app.models import Source
 from app.render import html
 
@@ -64,3 +66,17 @@ def test_render_escapes_html_in_title(tmp_path):
     content = out.read_text(encoding="utf-8")
     assert "<script>" not in content
     assert "&lt;script&gt;" in content
+
+
+def test_render_multiple_documents_do_not_collide(tmp_path):
+    d1 = _doc("First"); d1.filename = "alpha.pdf"
+    d2 = _doc("Second"); d2.filename = "beta.pdf"
+    def stub(fn):
+        sub = tmp_path / Path(fn).stem
+        sub.mkdir(parents=True, exist_ok=True)
+        p = sub / "page-0001.png"; p.write_bytes(b"\x89PNG\r\n")
+        return [p]
+    out = html.render_reader("M", [d1, d2], tmp_path, render_pdf_pages=stub)
+    content = out.read_text(encoding="utf-8")
+    assert "alpha/page-0001.png" in content
+    assert "beta/page-0001.png" in content

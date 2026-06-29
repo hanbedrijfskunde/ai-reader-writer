@@ -54,7 +54,11 @@ def _render_document(s: Source, out_dir: Path, render_pdf_pages) -> str:
     pages = render_pdf_pages(s.filename) if s.filename else []
     imgs = []
     for p in pages:
-        rel = _copy_into(Path(p), out_dir).name
+        p = Path(p)
+        try:
+            rel = p.relative_to(out_dir).as_posix()
+        except ValueError:
+            rel = _copy_into(p, out_dir).name
         imgs.append(f'  <img class="page-img" src="{_html.escape(rel)}" alt="">')
     return (
         '<section class="source document">\n'

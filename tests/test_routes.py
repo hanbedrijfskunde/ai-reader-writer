@@ -2,8 +2,8 @@ from fastapi.testclient import TestClient
 from app.main import create_app
 
 
-def test_health_endpoint():
-    client = TestClient(create_app())
+def test_health_endpoint(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
     resp = client.get("/health")
     assert resp.status_code == 200
     assert resp.json() == {"status": "ok"}
@@ -70,3 +70,25 @@ def test_pdf_upload_filename_is_sanitized(tmp_path, monkeypatch, sample_pdf_dir)
     uploads = tmp_path / "data" / "uploads"
     assert (uploads / "evil.pdf").exists()
     assert not (tmp_path / "evil.pdf").exists()
+
+
+def test_export_writes_reader_html(tmp_path, monkeypatch, sample_pdf_dir):
+    import pytest
+    from pathlib import Path
+    pdf_file = sample_pdf_dir / "Over leiderschap_DIG.pdf"
+    if not pdf_file.exists():
+        pytest.skip("sample PDF ontbreekt")
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    with pdf_file.open("rb") as fh:
+        client.post("/sources/pdf", files={"file": ("doc.pdf", fh, "application/pdf")})
+    def fake_render(src_path, out_dir, dpi=144):
+        out_dir = Path(out_dir); out_dir.mkdir(parents=True, exist_ok=True)
+        p = out_dir / "page-0001.png"; p.write_bytes(b"\x89PNG\r\n")
+        return [p]
+    monkeypatch.setattr(main.pdf, "render_pages_to_png", fake_render)
+    resp = client.post("/export")
+    assert resp.status_code == 200
+    render_dir = tmp_path / "data" / "renders"
+    assert (render_dir / "index.html").exists()
+    assert "page-0001.png" in (render_dir / "index.html").read_text(encoding="utf-8")

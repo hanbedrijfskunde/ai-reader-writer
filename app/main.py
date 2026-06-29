@@ -107,7 +107,10 @@ def create_app() -> FastAPI:
         project = store.get_project(project_id)
 
         def render_pdf_pages(filename: str):
-            return pdf.render_pages_to_png(settings.upload_dir / filename, settings.render_dir)
+            return pdf.render_pages_to_png(
+                settings.upload_dir / filename,
+                settings.render_dir / Path(filename).stem,
+            )
 
         out = render_html.render_reader(
             project.name, sources, settings.render_dir, render_pdf_pages=render_pdf_pages
