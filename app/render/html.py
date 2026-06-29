@@ -10,33 +10,80 @@ _FONTS = (
     '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
     '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
-    "family=Archivo:wght@400;500;600&"
-    'family=Spectral:ital,wght@0,400;0,500;0,600;1,500&display=swap">'
+    "family=Archivo:wght@500;600;700;800&"
+    "family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500"
+    '&display=swap">'
 )
 
+# Design system — "Het Naslagwerk" (HAN reader): Spectral serif voor tekst &
+# koppen, Archivo voor labels/meta, HAN-magenta als spaarzaam accent en het
+# springplank-motief (gekantelde balk, -20°). Klassenamen worden door de
+# rendertests vastgehouden; pas ze niet ongemerkt aan.
 _CSS = """
   *{box-sizing:border-box}
   body{margin:0;background:#e7e2d6;font-family:'Archivo',system-ui,sans-serif;color:#211d18;-webkit-font-smoothing:antialiased}
-  .wrap{display:flex;flex-direction:column;align-items:center;gap:26px;padding:30px 20px 60px}
-  .cover{width:880px;max-width:100%;text-align:center;padding:30px 0 0}
-  .cover h1{font:600 40px/1.12 'Spectral';margin:0}
-  .cover .reader-meta{font:600 12px 'Archivo';letter-spacing:.16em;text-transform:uppercase;color:#8a8175;margin-top:10px}
-  .sheet{width:880px;max-width:100%;background:#fbf9f4;box-shadow:0 4px 24px rgba(33,29,24,.12)}
+  /* sticky merk-nav */
+  .nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;height:54px;padding:0 26px;background:rgba(247,244,239,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid #ddd6c8}
+  .nav-spr{width:26px;height:8px;background:#e5007d;transform:rotate(-20deg);flex:none}
+  .nav-mark{font:800 18px 'Archivo';letter-spacing:.02em;color:#211d18}
+  .nav-title{font:600 13px 'Archivo';letter-spacing:.01em;color:#6b645a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nav-sp{flex:1}
+  .nav-meta{font:600 11px 'Archivo';letter-spacing:.14em;text-transform:uppercase;color:#9a9388;white-space:nowrap}
+  .wrap{display:flex;flex-direction:column;align-items:center;gap:26px;padding:30px 20px 64px}
+  /* omslag */
+  .cover{position:relative;width:880px;max-width:100%;background:#f7f4ef;box-shadow:0 4px 24px rgba(33,29,24,.12);overflow:hidden;display:flex;flex-direction:column;min-height:520px;scroll-margin-top:66px}
+  .cov-spr{position:absolute;background:#e5007d}
+  .s1{width:230px;height:40px;top:118px;right:34px;transform:rotate(-20deg)}
+  .s2{width:118px;height:22px;top:184px;right:148px;transform:rotate(-20deg);background:#f7b0d4}
+  .s3{width:78px;height:15px;top:94px;right:208px;transform:rotate(-20deg);background:#211d18}
+  .cov-top{padding:42px 56px 0;position:relative;z-index:2;display:flex;align-items:center;gap:12px}
+  .cov-mark{font:800 22px 'Archivo';letter-spacing:.02em;color:#211d18}
+  .cov-mid{margin-top:auto;padding:0 56px;position:relative;z-index:2}
+  .cov-kick{font:700 12px 'Archivo';letter-spacing:.26em;text-transform:uppercase;color:#e5007d;margin:0 0 18px}
+  .cover h1{font:600 clamp(40px,7vw,76px)/1.0 'Spectral';letter-spacing:-.02em;margin:0;max-width:660px;text-wrap:balance}
+  .cov-foot{margin-top:34px;padding:24px 56px 48px;position:relative;z-index:2;border-top:2px solid #211d18;margin-left:56px;margin-right:56px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:18px;padding-left:0;padding-right:0}
+  .reader-meta{font:600 12px 'Archivo';letter-spacing:.16em;text-transform:uppercase;color:#8a8175;margin:0}
+  .cov-size{font:600 12px 'Archivo';letter-spacing:.16em;text-transform:uppercase;color:#8a8175;margin:0}
+  /* vel + hoofdstukband */
+  .sheet{width:880px;max-width:100%;background:#fbf9f4;box-shadow:0 4px 24px rgba(33,29,24,.12);scroll-margin-top:66px}
   .band{display:flex;align-items:baseline;gap:14px;padding:18px 64px;background:#211d18;color:#f7f4ef}
   .band-n{font:500 13px 'Spectral';color:#f78ac4}
   .band-t{font:600 16px 'Archivo';letter-spacing:.02em}
   .band-r{margin-left:auto;font:600 11px 'Archivo';letter-spacing:.16em;text-transform:uppercase;color:#9a9388}
-  .pad{padding:46px 64px 56px}
-  .r-quote{font:500 25px/1.42 'Spectral';font-style:italic;border-left:3px solid #e5007d;padding:2px 0 2px 24px;margin:0 0 30px;text-wrap:pretty}
-  .page-img{display:block;width:100%;box-shadow:0 1px 6px rgba(33,29,24,.10);margin:14px 0}
-  .video a{display:inline-block}
-  .video img{max-width:480px;width:100%;border-radius:8px}
-  .synopsis{font:400 16px/1.6 'Spectral';color:#3a352d;margin-top:14px}
-  .questions{margin-top:34px;border-top:1px solid #e6e0d3;padding-top:22px}
-  .questions h3{font:600 12px 'Archivo';letter-spacing:.16em;text-transform:uppercase;color:#e5007d;margin:0 0 12px}
-  .questions ol{margin:0;padding-left:1.2em}
-  .questions li{font:400 16px/1.55 'Spectral';margin:8px 0}
-  @media print{body{background:#fff}.sheet{box-shadow:none}}
+  .pad{padding:50px 64px 58px}
+  .r-quote{font:500 25px/1.42 'Spectral';font-style:italic;color:#211d18;border-left:3px solid #e5007d;padding:2px 0 2px 24px;margin:0 0 30px;text-wrap:pretty}
+  .r-quote cite{display:block;font:600 12px 'Archivo';font-style:normal;color:#8a8175;letter-spacing:.04em;margin-top:12px}
+  /* bronpagina's */
+  .page-img{display:block;width:100%;margin:16px 0;border:1px solid #e1dacb;background:#fff;box-shadow:0 1px 8px rgba(33,29,24,.08)}
+  /* video */
+  .video a{display:inline-block;position:relative}
+  .video img{max-width:520px;width:100%;border-radius:8px;border:1px solid #e1dacb;box-shadow:0 1px 8px rgba(33,29,24,.08)}
+  .synopsis{font:400 16.5px/1.7 'Spectral';color:#2b261f;margin:18px 0 0;max-width:62ch;text-wrap:pretty}
+  /* verdiepende vragen */
+  .questions{margin-top:38px;border-top:1px solid #e6e0d3;padding-top:26px}
+  .questions h3{display:inline-block;font:700 10px 'Archivo';letter-spacing:.18em;text-transform:uppercase;color:#e5007d;border:1px solid #f4bcdb;border-radius:3px;padding:4px 9px;margin:0 0 18px}
+  .questions ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .questions li{counter-increment:q;position:relative;padding-left:42px;font:400 16.5px/1.62 'Spectral';color:#2b261f;margin:14px 0;text-wrap:pretty}
+  .questions li::before{content:counter(q,decimal-leading-zero);position:absolute;left:0;top:2px;font:600 13px 'Archivo';color:#e5007d}
+  @media (max-width:720px){
+    .nav{padding:0 18px;gap:10px}.nav-title{display:none}
+    .cov-top{padding:30px 26px 0}.cov-mid{padding:0 26px}
+    .cov-foot{margin-left:26px;margin-right:26px;padding-bottom:38px}
+    .cover h1{max-width:none}
+    .band{padding:14px 26px}.pad{padding:34px 26px 40px}
+  }
+  @media print{
+    @page{margin:14mm}
+    body{background:#fff}.nav{display:none}
+    /* block-flow i.p.v. flex: page-breaks zijn alleen betrouwbaar in block
+       containers (flex/grid negeren break-before in veel browsers) */
+    .wrap{display:block;gap:0;padding:0}
+    .sheet,.cover{box-shadow:none;border:none;width:auto;margin:0 auto;max-width:880px}
+    /* elke bron-sectie op een nieuwe pagina; omslag blijft pagina 1 */
+    .sheet{page-break-before:always;break-before:page}
+    .cover{page-break-after:always;break-after:page}
+    .questions,.r-quote,.page-img,.video{break-inside:avoid}
+  }
 """
 
 _PAGE_TEMPLATE = """<!DOCTYPE html>
@@ -49,6 +96,12 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
 <style>{styles}</style>
 </head>
 <body>
+<nav class="nav">
+  <span class="nav-spr"></span><span class="nav-mark">HAN</span>
+  <span class="nav-title">{nav_title}</span>
+  <span class="nav-sp"></span>
+  {nav_meta}
+</nav>
 <div class="wrap">
 {cover}
 {body}
@@ -139,6 +192,42 @@ def _render_sheet(
     )
 
 
+def _size_label(n_docs: int, n_videos: int) -> str:
+    parts: list[str] = []
+    if n_docs:
+        parts.append(f"{n_docs} bron" if n_docs == 1 else f"{n_docs} bronnen")
+    if n_videos:
+        parts.append(f"{n_videos} video" if n_videos == 1 else f"{n_videos} video's")
+    return " · ".join(parts)
+
+
+def _render_cover(
+    project_name: str, subtitle: str | None, n_docs: int, n_videos: int
+) -> str:
+    foot_items: list[str] = []
+    if subtitle:
+        foot_items.append(f'<p class="reader-meta">{_html.escape(subtitle)}</p>')
+    size = _size_label(n_docs, n_videos)
+    if size:
+        foot_items.append(f'<p class="cov-size">{_html.escape(size)}</p>')
+    foot = (
+        f'\n  <div class="cov-foot">{"".join(foot_items)}</div>' if foot_items else ""
+    )
+    return (
+        '<header class="cover" id="omslag">\n'
+        '  <span class="cov-spr s3"></span><span class="cov-spr s2"></span>'
+        '<span class="cov-spr s1"></span>\n'
+        '  <div class="cov-top"><span class="nav-spr"></span>'
+        '<span class="cov-mark">HAN</span></div>\n'
+        '  <div class="cov-mid">\n'
+        '    <p class="cov-kick">Reader</p>\n'
+        f"    <h1>{_html.escape(project_name)}</h1>\n"
+        "  </div>"
+        f"{foot}\n"
+        "</header>"
+    )
+
+
 def render_reader(
     project_name: str,
     sources: list[Source],
@@ -166,19 +255,20 @@ def render_reader(
             _render_sheet(s, number, content, quotes.get(s.id), qbs.get(s.id) or [])
         )
 
-    subtitle_html = (
-        f'<p class="reader-meta">{_html.escape(subtitle)}</p>' if subtitle else ""
-    )
-    cover = (
-        '<header class="cover">\n'
-        f"  <h1>{_html.escape(project_name)}</h1>\n"
-        f"  {subtitle_html}\n"
-        "</header>"
+    included = [s for s in sources if s.included]
+    n_docs = sum(1 for s in included if s.kind != "video")
+    n_videos = sum(1 for s in included if s.kind == "video")
+    cover = _render_cover(project_name, subtitle, n_docs, n_videos)
+
+    nav_meta = (
+        f'<span class="nav-meta">{_html.escape(subtitle)}</span>' if subtitle else ""
     )
     page = _PAGE_TEMPLATE.format(
         title=_html.escape(project_name),
         fonts=_FONTS,
         styles=_CSS,
+        nav_title=_html.escape(project_name),
+        nav_meta=nav_meta,
         cover=cover,
         body="\n".join(sheets),
     )
