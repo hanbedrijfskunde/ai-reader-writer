@@ -7,3 +7,50 @@ def test_health_endpoint():
     resp = client.get("/health")
     assert resp.status_code == 200
     assert resp.json() == {"status": "ok"}
+
+
+def _client(tmp_path, monkeypatch):
+    from app.config import load_settings
+    import app.main as main
+
+    settings = load_settings(env_file=tmp_path / "none.env", data_dir=tmp_path / "data")
+    monkeypatch.setattr(main, "load_settings", lambda: settings)
+    return TestClient(main.create_app())
+
+
+def test_index_renders(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "Reader" in resp.text
+
+
+def test_add_video_lists_source(tmp_path, monkeypatch):
+    import app.main as main
+    fake = {
+        "metadata": {"title": "Mijn video", "url": "https://youtu.be/x",
+                     "video_id": "x", "channel": "C", "duration": "1:00",
+                     "thumbnail": "https://t/thumb.jpg"},
+        "transcript": [{"ts": "0:00", "text": "hallo wereld"}],
+    }
+    monkeypatch.setattr(main.video, "fetch_raw", lambda url, _runner=None: fake)
+    monkeypatch.setattr(main, "summarize", lambda text, **kw: "Synopsis.")
+    client = _client(tmp_path, monkeypatch)
+    resp = client.post("/sources/video", data={"url": "https://youtu.be/x"})
+    assert resp.status_code == 200
+    assert "Mijn video" in resp.text
+
+
+def test_add_pdf_lists_source(tmp_path, monkeypatch, sample_pdf_dir):
+    import pytest
+    pdf_file = sample_pdf_dir / "Over leiderschap_DIG.pdf"
+    if not pdf_file.exists():
+        pytest.skip("sample PDF ontbreekt")
+    client = _client(tmp_path, monkeypatch)
+    with pdf_file.open("rb") as fh:
+        resp = client.post(
+            "/sources/pdf",
+            files={"file": ("Over leiderschap_DIG.pdf", fh, "application/pdf")},
+        )
+    assert resp.status_code == 200
+    assert "Over leiderschap" in resp.text
