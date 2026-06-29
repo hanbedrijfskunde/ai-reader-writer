@@ -31,3 +31,11 @@ class Source:
     duration: str | None = None
     thumbnail_url: str | None = None
     synopsis: str | None = None
+
+
+@dataclass
+class Question:
+    id: int
+    source_id: int
+    position: int
+    text: str
