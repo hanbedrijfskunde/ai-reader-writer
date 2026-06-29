@@ -20,6 +20,36 @@ from app.store import Store
 _TEMPLATES = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 
 
+def process_video(store: "Store", settings, source_id: int, url: str) -> None:
+    """Background task: fetch transcript, summarise, extract a verbatim quote,
+    then update the pending source. Any failure leaves a clear failed title."""
+    try:
+        raw = video.fetch_raw(url)
+        meta = raw.get("metadata") or {}
+        text = video.transcript_text(raw)
+        synopsis = (
+            summarize(text, model=settings.default_model, claude_key=settings.anthropic_key)
+            if text else None
+        )
+        quote = (
+            extract_quote(text, model=settings.default_model, claude_key=settings.anthropic_key)
+            if text else ""
+        )
+        store.finish_video(
+            source_id,
+            title=meta.get("title") or url,
+            video_id=meta.get("video_id"),
+            channel=meta.get("channel"),
+            duration=meta.get("duration"),
+            thumbnail_url=meta.get("thumbnail"),
+            text=text,
+            synopsis=synopsis,
+            quote=quote or None,
+        )
+    except Exception:
+        store.finish_video(source_id, title="Ophalen mislukt")
+
+
 def create_app() -> FastAPI:
     settings = load_settings()
     store = Store(settings.db_path)

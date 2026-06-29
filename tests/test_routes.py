@@ -328,3 +328,57 @@ def test_index_uses_design_system(tmp_path, monkeypatch):
     # existing functionality still present
     assert 'hx-post="/sources/pdf"' in body
     assert 'hx-post="/export/pdf"' in body
+
+
+def test_process_video_success(tmp_path, monkeypatch):
+    import app.main as main
+    from app.config import load_settings
+    from app.store import Store
+    from app.models import Source
+
+    settings = load_settings(env_file=tmp_path / "none.env", data_dir=tmp_path / "data")
+    store = Store(settings.db_path)
+    p = store.create_project("M")
+    s = store.add_source(p.id, Source(
+        id=0, project_id=0, kind="video", title="Video wordt opgehaald…",
+        position=0, included=True, text="", youtube_url="https://youtu.be/x",
+        processing=True,
+    ))
+    fake = {"metadata": {"title": "Echte titel", "url": "https://youtu.be/x",
+                          "video_id": "x", "thumbnail": "https://t/t.jpg"},
+            "transcript": [{"ts": "0:00", "text": "inhoud over leiderschap"}]}
+    monkeypatch.setattr(main.video, "fetch_raw", lambda url, _runner=None: fake)
+    monkeypatch.setattr(main, "summarize", lambda text, **kw: "syn")
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "inhoud over leiderschap")
+
+    main.process_video(store, settings, s.id, "https://youtu.be/x")
+
+    got = store.list_sources(p.id)[0]
+    assert got.processing is False
+    assert got.title == "Echte titel"
+    assert got.synopsis == "syn"
+    assert got.quote == "inhoud over leiderschap"
+
+
+def test_process_video_failure_sets_failed_title(tmp_path, monkeypatch):
+    import app.main as main
+    from app.config import load_settings
+    from app.store import Store
+    from app.models import Source
+
+    settings = load_settings(env_file=tmp_path / "none.env", data_dir=tmp_path / "data")
+    store = Store(settings.db_path)
+    p = store.create_project("M")
+    s = store.add_source(p.id, Source(
+        id=0, project_id=0, kind="video", title="Video wordt opgehaald…",
+        position=0, included=True, text="", processing=True,
+    ))
+
+    def boom(url, _runner=None):
+        raise RuntimeError("playwright kapot")
+
+    monkeypatch.setattr(main.video, "fetch_raw", boom)
+    main.process_video(store, settings, s.id, "https://youtu.be/x")
+
+    got = store.list_sources(p.id)[0]
+    assert got.processing is False and got.title == "Ophalen mislukt"
