@@ -80,6 +80,16 @@ def _render_document(s: Source, out_dir: Path, render_pdf_pages) -> str:
     )
 
 
+def _render_questions(questions: list[str]) -> str:
+    items = "\n".join(f"    <li>{_html.escape(q)}</li>" for q in questions)
+    return (
+        '<section class="questions">\n'
+        "  <h3>Verdiepende vragen</h3>\n"
+        f"  <ol>\n{items}\n  </ol>\n"
+        "</section>"
+    )
+
+
 def render_reader(
     project_name: str,
     sources: list[Source],
@@ -87,8 +97,10 @@ def render_reader(
     *,
     render_pdf_pages,
     subtitle: str | None = None,
+    questions_by_source: dict[int, list[str]] | None = None,
 ) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
+    qbs = questions_by_source or {}
     blocks: list[str] = []
     for s in sources:
         if not s.included:
@@ -97,6 +109,9 @@ def render_reader(
             blocks.append(_render_video(s))
         else:
             blocks.append(_render_document(s, out_dir, render_pdf_pages))
+        qs = qbs.get(s.id) or []
+        if qs:
+            blocks.append(_render_questions(qs))
 
     subtitle_html = (
         f'<p class="reader-meta">{_html.escape(subtitle)}</p>' if subtitle else ""

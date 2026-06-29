@@ -121,3 +121,26 @@ def test_render_video_omits_empty_synopsis_paragraph(tmp_path):
     out = html.render_reader("M", [v], tmp_path, render_pdf_pages=lambda fn: [])
     content = out.read_text(encoding="utf-8")
     assert 'class="synopsis"' not in content  # no empty synopsis block
+
+
+def test_render_includes_questions_block(tmp_path):
+    v = _video("Vid")  # id == 1 in de _video-helper
+    out = html.render_reader(
+        "M", [v], tmp_path, render_pdf_pages=lambda fn: [],
+        questions_by_source={v.id: ["Waarom werkt dit?", "<b>Hoe</b> nu?"]},
+    )
+    content = out.read_text(encoding="utf-8")
+    assert 'class="questions"' in content
+    assert "Verdiepende vragen" in content
+    assert "Waarom werkt dit?" in content
+    assert "&lt;b&gt;Hoe&lt;/b&gt; nu?" in content   # escaped
+    assert "<b>Hoe</b> nu?" not in content
+
+
+def test_render_no_questions_block_when_absent(tmp_path):
+    v = _video("Vid")
+    out = html.render_reader(
+        "M", [v], tmp_path, render_pdf_pages=lambda fn: [],
+        questions_by_source={},
+    )
+    assert 'class="questions"' not in out.read_text(encoding="utf-8")
