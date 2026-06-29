@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <title>AI Reader &amp; Writer</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js"
+          integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
+          crossorigin="anonymous"></script>
+  <style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto}</style>
+</head>
+<body>
+  <h1>AI Reader &amp; Writer</h1>
+
+  <h2>PDF toevoegen</h2>
+  <form hx-post="/sources/pdf" hx-encoding="multipart/form-data" hx-target="#source-list" hx-swap="outerHTML">
+    <input type="file" name="file" accept="application/pdf" required>
+    <button type="submit">Upload PDF</button>
+  </form>
+
+  <h2>YouTube-video toevoegen</h2>
+  <form hx-post="/sources/video" hx-target="#source-list" hx-swap="outerHTML">
+    <input type="url" name="url" placeholder="https://www.youtube.com/watch?v=..." required size="40">
+    <button type="submit">Haal video op</button>
+  </form>
+
+  <h2>Bloom-doelniveau</h2>
+  <form hx-post="/bloom">
+    <select name="level">
+      <option>Onthouden</option><option>Begrijpen</option><option>Toepassen</option>
+      <option>Analyseren</option><option>Evalueren</option><option>Creeren</option>
+    </select>
+    <button type="submit">Opslaan</button>
+  </form>
+
+  <h2>Bronnen</h2>
+  {% include "_source_list.html" %}
+
+  <h2>Export</h2>
+  <form hx-post="/export" hx-target="#export-result">
+    <button type="submit">Exporteer reader (HTML)</button>
+  </form>
+  <div id="export-result"></div>
+</body>
+</html>

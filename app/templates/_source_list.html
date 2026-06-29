@@ -1,0 +1,13 @@
+<ul id="source-list">
+  {% for s in sources %}
+  <li data-id="{{ s.id }}">
+    <strong>{{ s.title }}</strong> <span>({{ s.kind }})</span>
+    <form hx-post="/sources/{{ s.id }}/toggle" hx-target="#source-list" hx-swap="outerHTML" style="display:inline">
+      <button type="submit">{{ "in reader" if s.included else "verborgen" }}</button>
+    </form>
+    <form hx-post="/sources/{{ s.id }}/delete" hx-target="#source-list" hx-swap="outerHTML" style="display:inline">
+      <button type="submit">verwijder</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>

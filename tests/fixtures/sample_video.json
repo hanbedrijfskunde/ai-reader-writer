@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "title": "Wat is leiderschap?",
+    "video_id": "abc123XYZ_0",
+    "url": "https://www.youtube.com/watch?v=abc123XYZ_0",
+    "channel": "HAN Bedrijfskunde",
+    "duration": "12:34",
+    "length_seconds": 754,
+    "thumbnail": "https://i.ytimg.com/vi/abc123XYZ_0/maxresdefault.jpg"
+  },
+  "transcript": [
+    {"ts": "0:00", "text": "Welkom bij deze les over leiderschap."},
+    {"ts": "0:05", "text": "We bespreken drie kernstijlen."}
+  ]
+}

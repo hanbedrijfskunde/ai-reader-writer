@@ -1,0 +1,128 @@
+from __future__ import annotations
+
+from pathlib import Path
+from urllib.parse import urlparse
+
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+from app.config import load_settings
+from app.ingest import pdf, video
+from app.ai.client import summarize  # noqa: F401  (monkeypatch-doel in tests)
+from app.models import Source
+from app.render import html as render_html
+from app.store import Store
+
+_TEMPLATES = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
+
+
+def create_app() -> FastAPI:
+    settings = load_settings()
+    store = Store(settings.db_path)
+
+    existing = store._conn.execute("SELECT id FROM projects ORDER BY id LIMIT 1").fetchone()
+    project_id = existing["id"] if existing else store.create_project("Mijn reader").id
+
+    app = FastAPI(title="AI Reader & Writer")
+    app.state.settings = settings
+    app.state.store = store
+    app.state.project_id = project_id
+
+    def _list_partial(request: Request) -> HTMLResponse:
+        sources = store.list_sources(project_id)
+        return _TEMPLATES.TemplateResponse(
+            request, "_source_list.html", {"sources": sources}
+        )
+
+    @app.get("/health")
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
+
+    @app.get("/", response_class=HTMLResponse)
+    def index(request: Request):
+        sources = store.list_sources(project_id)
+        return _TEMPLATES.TemplateResponse(
+            request, "index.html", {"sources": sources}
+        )
+
+    @app.post("/sources/pdf", response_class=HTMLResponse)
+    async def add_pdf(request: Request, file: UploadFile = File(...)):
+        sanitized_filename = Path(file.filename).name
+        dest = settings.upload_dir / sanitized_filename
+        dest.write_bytes(await file.read())
+        src = Source(
+            id=0, project_id=project_id, kind="document",
+            title=Path(sanitized_filename).stem, position=0, included=True,
+            text=pdf.extract_text(dest), filename=sanitized_filename,
+            page_count=pdf.page_count(dest),
+        )
+        store.add_source(project_id, src)
+        return _list_partial(request)
+
+    @app.post("/sources/video", response_class=HTMLResponse)
+    def add_video(request: Request, url: str = Form(...)):
+        if urlparse(url).scheme not in ("http", "https"):
+            raise HTTPException(status_code=400, detail="Alleen http(s)-URL's worden ondersteund.")
+        raw = video.fetch_raw(url)
+        meta = raw.get("metadata") or {}
+        text = video.transcript_text(raw)
+        synopsis = (
+            summarize(text, model=settings.default_model, claude_key=settings.anthropic_key)
+            if text else None
+        )
+        src = Source(
+            id=0, project_id=project_id, kind="video",
+            title=meta.get("title") or url, position=0, included=True,
+            text=text, youtube_url=meta.get("url") or url,
+            video_id=meta.get("video_id"), channel=meta.get("channel"),
+            duration=meta.get("duration"), thumbnail_url=meta.get("thumbnail"),
+            synopsis=synopsis,
+        )
+        store.add_source(project_id, src)
+        return _list_partial(request)
+
+    @app.post("/sources/reorder", response_class=HTMLResponse)
+    def reorder(request: Request, ordered_ids: str = Form(...)):
+        ids = [int(x) for x in ordered_ids.split(",") if x.strip()]
+        store.reorder_sources(project_id, ids)
+        return _list_partial(request)
+
+    @app.post("/sources/{source_id}/toggle", response_class=HTMLResponse)
+    def toggle(request: Request, source_id: int):
+        current = {s.id: s for s in store.list_sources(project_id)}[source_id]
+        store.set_included(source_id, not current.included)
+        return _list_partial(request)
+
+    @app.post("/sources/{source_id}/delete", response_class=HTMLResponse)
+    def delete(request: Request, source_id: int):
+        store.remove_source(source_id)
+        return _list_partial(request)
+
+    @app.post("/bloom")
+    def set_bloom(level: str = Form(...)):
+        store.set_bloom_level(project_id, level)
+        return {"status": "ok", "level": level}
+
+    @app.post("/export", response_class=HTMLResponse)
+    def export():
+        sources = store.list_sources(project_id)
+        project = store.get_project(project_id)
+
+        def render_pdf_pages(filename: str):
+            return pdf.render_pages_to_png(
+                settings.upload_dir / filename,
+                settings.render_dir / Path(filename).stem,
+            )
+
+        out = render_html.render_reader(
+            project.name, sources, settings.render_dir, render_pdf_pages=render_pdf_pages
+        )
+        return HTMLResponse(
+            f'<a href="file://{out}" target="_blank">Reader geexporteerd: {out}</a>'
+        )
+
+    return app
+
+
+app = create_app()
