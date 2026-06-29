@@ -42,9 +42,24 @@ def create_app() -> FastAPI:
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request):
         sources = store.list_sources(project_id)
+        project = store.get_project(project_id)
         return _TEMPLATES.TemplateResponse(
-            request, "index.html", {"sources": sources}
+            request, "index.html", {"sources": sources, "project": project}
         )
+
+    @app.post("/meta", response_class=HTMLResponse)
+    def save_meta(
+        reader_title: str = Form(""),
+        module_code: str = Form(""),
+        academic_year: str = Form(""),
+    ):
+        store.set_meta(
+            project_id,
+            reader_title.strip() or None,
+            module_code.strip() or None,
+            academic_year.strip() or None,
+        )
+        return HTMLResponse("<span>Opgeslagen ✓</span>")
 
     @app.post("/sources/pdf", response_class=HTMLResponse)
     async def add_pdf(request: Request, file: UploadFile = File(...)):
@@ -115,8 +130,13 @@ def create_app() -> FastAPI:
                 settings.render_dir / Path(filename).stem,
             )
 
+        title = project.reader_title or project.name
+        meta_parts = [p for p in (project.module_code, project.academic_year) if p]
+        subtitle = " · ".join(meta_parts) if meta_parts else None
+
         out = render_html.render_reader(
-            project.name, sources, settings.render_dir, render_pdf_pages=render_pdf_pages
+            title, sources, settings.render_dir,
+            render_pdf_pages=render_pdf_pages, subtitle=subtitle,
         )
         return HTMLResponse(
             f'<a href="file://{out}" target="_blank">Reader geexporteerd: {out}</a>'

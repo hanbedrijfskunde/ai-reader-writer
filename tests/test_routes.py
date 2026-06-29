@@ -98,3 +98,22 @@ def test_video_rejects_non_http_url(tmp_path, monkeypatch):
     client = _client(tmp_path, monkeypatch)
     resp = client.post("/sources/video", data={"url": "javascript:alert(1)"})
     assert resp.status_code == 400
+
+
+def test_meta_saved_prefilled_and_used_in_export(tmp_path, monkeypatch):
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    resp = client.post("/meta", data={"reader_title": "Strategie",
+                                       "module_code": "BK-101",
+                                       "academic_year": "2025-2026"})
+    assert resp.status_code == 200
+    # index prefilled with the saved values
+    idx = client.get("/").text
+    assert "Strategie" in idx and "BK-101" in idx and "2025-2026" in idx
+    # export uses reader_title as <h1> and module/year as subtitle
+    monkeypatch.setattr(main.pdf, "render_pages_to_png", lambda *a, **k: [])
+    exp = client.post("/export")
+    assert exp.status_code == 200
+    html_txt = (tmp_path / "data" / "renders" / "index.html").read_text(encoding="utf-8")
+    assert "<h1>Strategie</h1>" in html_txt
+    assert "BK-101 · 2025-2026" in html_txt

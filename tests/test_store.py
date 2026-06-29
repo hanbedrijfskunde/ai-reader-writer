@@ -54,3 +54,31 @@ def test_set_status_and_bloom(tmp_path):
     got = store.get_project(p.id)
     assert got.status == "definitief"
     assert got.bloom_level == "Analyseren"
+
+
+def test_set_and_get_meta(tmp_path):
+    store = Store(tmp_path / "t.sqlite")
+    p = store.create_project("M")
+    store.set_meta(p.id, reader_title="Strategie 1", module_code="BK-101",
+                   academic_year="2025-2026")
+    got = store.get_project(p.id)
+    assert got.reader_title == "Strategie 1"
+    assert got.module_code == "BK-101"
+    assert got.academic_year == "2025-2026"
+
+
+def test_meta_migration_on_legacy_db(tmp_path):
+    import sqlite3
+    db = tmp_path / "legacy.sqlite"
+    conn = sqlite3.connect(db)
+    conn.execute(
+        "CREATE TABLE projects (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "name TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'concept', bloom_level TEXT)"
+    )
+    conn.execute("INSERT INTO projects (name) VALUES ('Oud')")
+    conn.commit()
+    conn.close()
+    store = Store(db)  # opening must migrate the legacy table
+    store.set_meta(1, reader_title="T", module_code="C", academic_year="Y")
+    got = store.get_project(1)
+    assert (got.reader_title, got.module_code, got.academic_year) == ("T", "C", "Y")
