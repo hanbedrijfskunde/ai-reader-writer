@@ -317,3 +317,14 @@ def test_export_html_includes_quote(tmp_path, monkeypatch):
     html_txt = (tmp_path / "data" / "renders" / "index.html").read_text(encoding="utf-8")
     assert 'class="r-quote"' in html_txt
     assert "inhoud over leiderschap" in html_txt
+
+
+def test_index_uses_design_system(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+    body = client.get("/").text
+    assert "fonts.googleapis.com" in body
+    assert "#e5007d" in body          # magenta accent token
+    assert "Archivo" in body
+    # existing functionality still present
+    assert 'hx-post="/sources/pdf"' in body
+    assert 'hx-post="/export/pdf"' in body
