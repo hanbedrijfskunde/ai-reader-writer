@@ -54,3 +54,19 @@ def test_add_pdf_lists_source(tmp_path, monkeypatch, sample_pdf_dir):
         )
     assert resp.status_code == 200
     assert "Over leiderschap" in resp.text
+
+
+def test_pdf_upload_filename_is_sanitized(tmp_path, monkeypatch, sample_pdf_dir):
+    import pytest
+    pdf_file = sample_pdf_dir / "Over leiderschap_DIG.pdf"
+    if not pdf_file.exists():
+        pytest.skip("sample PDF ontbreekt")
+    client = _client(tmp_path, monkeypatch)
+    with pdf_file.open("rb") as fh:
+        resp = client.post("/sources/pdf",
+            files={"file": ("../../evil.pdf", fh, "application/pdf")})
+    assert resp.status_code == 200
+    # the file must land inside data/uploads as evil.pdf, not above it
+    uploads = tmp_path / "data" / "uploads"
+    assert (uploads / "evil.pdf").exists()
+    assert not (tmp_path / "evil.pdf").exists()

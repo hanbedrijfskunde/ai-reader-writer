@@ -47,12 +47,13 @@ def create_app() -> FastAPI:
 
     @app.post("/sources/pdf", response_class=HTMLResponse)
     async def add_pdf(request: Request, file: UploadFile = File(...)):
-        dest = settings.upload_dir / file.filename
+        sanitized_filename = Path(file.filename).name
+        dest = settings.upload_dir / sanitized_filename
         dest.write_bytes(await file.read())
         src = Source(
             id=0, project_id=project_id, kind="document",
-            title=Path(file.filename).stem, position=0, included=True,
-            text=pdf.extract_text(dest), filename=file.filename,
+            title=Path(sanitized_filename).stem, position=0, included=True,
+            text=pdf.extract_text(dest), filename=sanitized_filename,
             page_count=pdf.page_count(dest),
         )
         store.add_source(project_id, src)
