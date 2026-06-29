@@ -24,3 +24,6 @@ output/
 
 # Editor
 .vscode/
+
+# Lokale runtime-data (db, uploads, renders)
+data/
