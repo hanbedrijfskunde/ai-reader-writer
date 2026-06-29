@@ -173,3 +173,20 @@ def test_render_escapes_subtitle(tmp_path):
 def test_render_without_subtitle_has_no_meta(tmp_path):
     out = html.render_reader("T", [], tmp_path, render_pdf_pages=lambda fn: [])
     assert 'class="reader-meta"' not in out.read_text(encoding="utf-8")
+
+
+def test_render_images_not_lazy_loaded(tmp_path):
+    # loading="lazy" images don't render in headless Chromium PDF print (there is
+    # no viewport scroll), so the export must load images eagerly — otherwise the
+    # remote video thumbnail (and far-down page images) stay blank in the PDF.
+    page = tmp_path / "page-0001.png"
+    page.write_bytes(b"\x89PNG\r\n")
+    out = html.render_reader(
+        "M", [_video("Vid"), _doc("Doc")], tmp_path,
+        render_pdf_pages=lambda fn: [page],
+    )
+    content = out.read_text(encoding="utf-8")
+    assert 'loading="lazy"' not in content
+    # sanity: thumbnail + page image are still rendered
+    assert "https://img/thumb.jpg" in content
+    assert "page-0001.png" in content
