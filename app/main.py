@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -65,9 +65,10 @@ def create_app() -> FastAPI:
     def _list_partial(request: Request) -> HTMLResponse:
         sources = store.list_sources(project_id)
         questions = {s.id: store.list_questions(s.id) for s in sources}
+        any_processing = any(s.processing for s in sources)
         return _TEMPLATES.TemplateResponse(
             request, "_source_list.html",
-            {"sources": sources, "questions": questions},
+            {"sources": sources, "questions": questions, "any_processing": any_processing},
         )
 
     def _autoquote(stored: Source) -> None:
@@ -88,10 +89,16 @@ def create_app() -> FastAPI:
         sources = store.list_sources(project_id)
         project = store.get_project(project_id)
         questions = {s.id: store.list_questions(s.id) for s in sources}
+        any_processing = any(s.processing for s in sources)
         return _TEMPLATES.TemplateResponse(
             request, "index.html",
-            {"sources": sources, "project": project, "questions": questions},
+            {"sources": sources, "project": project, "questions": questions,
+             "any_processing": any_processing},
         )
+
+    @app.get("/sources", response_class=HTMLResponse)
+    def sources_partial(request: Request):
+        return _list_partial(request)
 
     @app.post("/meta", response_class=HTMLResponse)
     def save_meta(
@@ -123,26 +130,16 @@ def create_app() -> FastAPI:
         return _list_partial(request)
 
     @app.post("/sources/video", response_class=HTMLResponse)
-    def add_video(request: Request, url: str = Form(...)):
+    def add_video(request: Request, background_tasks: BackgroundTasks, url: str = Form(...)):
         if urlparse(url).scheme not in ("http", "https"):
             raise HTTPException(status_code=400, detail="Alleen http(s)-URL's worden ondersteund.")
-        raw = video.fetch_raw(url)
-        meta = raw.get("metadata") or {}
-        text = video.transcript_text(raw)
-        synopsis = (
-            summarize(text, model=settings.default_model, claude_key=settings.anthropic_key)
-            if text else None
-        )
         src = Source(
             id=0, project_id=project_id, kind="video",
-            title=meta.get("title") or url, position=0, included=True,
-            text=text, youtube_url=meta.get("url") or url,
-            video_id=meta.get("video_id"), channel=meta.get("channel"),
-            duration=meta.get("duration"), thumbnail_url=meta.get("thumbnail"),
-            synopsis=synopsis,
+            title="Video wordt opgehaald…", position=0, included=True,
+            text="", youtube_url=url, processing=True,
         )
         stored = store.add_source(project_id, src)
-        _autoquote(stored)
+        background_tasks.add_task(process_video, store, settings, stored.id, url)
         return _list_partial(request)
 
     @app.post("/sources/reorder", response_class=HTMLResponse)

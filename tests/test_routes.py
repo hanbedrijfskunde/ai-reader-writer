@@ -37,9 +37,39 @@ def test_add_video_lists_source(tmp_path, monkeypatch):
     monkeypatch.setattr(main, "summarize", lambda text, **kw: "Synopsis.")
     monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "")
     client = _client(tmp_path, monkeypatch)
+    client.post("/sources/video", data={"url": "https://youtu.be/x"})
+    # background finished -> the real title now shows in a fresh render
+    assert "Mijn video" in client.get("/").text
+
+
+def test_add_video_returns_pending_and_schedules(tmp_path, monkeypatch):
+    import re
+    import app.main as main
+    scheduled = {}
+
+    def fake_process(store, settings, source_id, url):
+        scheduled["id"] = source_id
+        scheduled["url"] = url  # do NOT process -> source stays pending
+
+    monkeypatch.setattr(main, "process_video", fake_process)
+    client = _client(tmp_path, monkeypatch)
     resp = client.post("/sources/video", data={"url": "https://youtu.be/x"})
     assert resp.status_code == 200
-    assert "Mijn video" in resp.text
+    assert "Video wordt opgehaald" in resp.text          # placeholder shown
+    sid = int(re.search(r'data-id="(\d+)"', resp.text).group(1))
+    assert scheduled == {"id": sid, "url": "https://youtu.be/x"}
+    # the source exists and is still processing (background was a no-op)
+    src = {s.id: s for s in main_store(client).list_sources(store_project_id(client))}[sid]
+    assert src.processing is True
+
+
+def test_sources_poll_route_returns_list(tmp_path, monkeypatch):
+    monkeypatch.setattr(__import__("app.main", fromlist=["x"]), "process_video",
+                        lambda *a, **k: None)
+    client = _client(tmp_path, monkeypatch)
+    resp = client.get("/sources")
+    assert resp.status_code == 200
+    assert 'id="source-list"' in resp.text
 
 
 def test_add_pdf_lists_source(tmp_path, monkeypatch, sample_pdf_dir):
