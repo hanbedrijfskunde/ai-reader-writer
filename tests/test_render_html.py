@@ -80,3 +80,12 @@ def test_render_multiple_documents_do_not_collide(tmp_path):
     content = out.read_text(encoding="utf-8")
     assert "alpha/page-0001.png" in content
     assert "beta/page-0001.png" in content
+
+
+def test_render_strips_javascript_url_scheme(tmp_path):
+    v = _video("x")
+    v.youtube_url = "javascript:alert(1)"
+    out = html.render_reader("M", [v], tmp_path, render_pdf_pages=lambda fn: [])
+    content = out.read_text(encoding="utf-8")
+    assert "javascript:alert(1)" not in content
+    assert 'href=""' in content  # scheme allowlisted to empty

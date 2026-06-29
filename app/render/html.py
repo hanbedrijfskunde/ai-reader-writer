@@ -2,8 +2,19 @@ from __future__ import annotations
 
 import html as _html
 from pathlib import Path
+from urllib.parse import urlparse
 
 from app.models import Source
+
+
+def _safe_url(value: str | None) -> str:
+    """Return the URL only if it uses an http(s) scheme; else empty string.
+
+    Escaping alone does not stop a javascript:/data: scheme in href/src, so we
+    allowlist the scheme before the value reaches the exported HTML.
+    """
+    value = value or ""
+    return value if urlparse(value).scheme in ("http", "https") else ""
 
 _PAGE_TEMPLATE = """<!DOCTYPE html>
 <html lang="nl">
@@ -36,8 +47,8 @@ def _copy_into(src: Path, out_dir: Path) -> Path:
 
 def _render_video(s: Source) -> str:
     title = _html.escape(s.title)
-    url = _html.escape(s.youtube_url or "")
-    thumb = _html.escape(s.thumbnail_url or "")
+    url = _html.escape(_safe_url(s.youtube_url))
+    thumb = _html.escape(_safe_url(s.thumbnail_url))
     synopsis = _html.escape(s.synopsis or "")
     return (
         '<section class="source video">\n'

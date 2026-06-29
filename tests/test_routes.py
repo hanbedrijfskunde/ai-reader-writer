@@ -92,3 +92,9 @@ def test_export_writes_reader_html(tmp_path, monkeypatch, sample_pdf_dir):
     render_dir = tmp_path / "data" / "renders"
     assert (render_dir / "index.html").exists()
     assert "page-0001.png" in (render_dir / "index.html").read_text(encoding="utf-8")
+
+
+def test_video_rejects_non_http_url(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+    resp = client.post("/sources/video", data={"url": "javascript:alert(1)"})
+    assert resp.status_code == 400

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import urlparse
 
-from fastapi import FastAPI, File, Form, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -61,6 +62,8 @@ def create_app() -> FastAPI:
 
     @app.post("/sources/video", response_class=HTMLResponse)
     def add_video(request: Request, url: str = Form(...)):
+        if urlparse(url).scheme not in ("http", "https"):
+            raise HTTPException(status_code=400, detail="Alleen http(s)-URL's worden ondersteund.")
         raw = video.fetch_raw(url)
         meta = raw.get("metadata") or {}
         text = video.transcript_text(raw)
