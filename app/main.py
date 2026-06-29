@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 from app.config import load_settings
 from app.ingest import pdf, video
 from app.ai.client import summarize  # noqa: F401  (monkeypatch-doel in tests)
+from app.ai.questions import generate_questions  # noqa: F401  (monkeypatch-doel in tests)
 from app.models import Source
 from app.render import html as render_html
 from app.store import Store
@@ -31,8 +32,10 @@ def create_app() -> FastAPI:
 
     def _list_partial(request: Request) -> HTMLResponse:
         sources = store.list_sources(project_id)
+        questions = {s.id: store.list_questions(s.id) for s in sources}
         return _TEMPLATES.TemplateResponse(
-            request, "_source_list.html", {"sources": sources}
+            request, "_source_list.html",
+            {"sources": sources, "questions": questions},
         )
 
     @app.get("/health")
@@ -43,8 +46,10 @@ def create_app() -> FastAPI:
     def index(request: Request):
         sources = store.list_sources(project_id)
         project = store.get_project(project_id)
+        questions = {s.id: store.list_questions(s.id) for s in sources}
         return _TEMPLATES.TemplateResponse(
-            request, "index.html", {"sources": sources, "project": project}
+            request, "index.html",
+            {"sources": sources, "project": project, "questions": questions},
         )
 
     @app.post("/meta", response_class=HTMLResponse)
@@ -124,6 +129,34 @@ def create_app() -> FastAPI:
                 )
         if synopsis:
             store.set_synopsis(source_id, synopsis)
+        return _list_partial(request)
+
+    @app.post("/sources/{source_id}/questions/generate", response_class=HTMLResponse)
+    def generate_qs(request: Request, source_id: int):
+        src = {s.id: s for s in store.list_sources(project_id)}[source_id]
+        level = store.get_project(project_id).bloom_level or "Begrijpen"
+        if src.text.strip():
+            qs = generate_questions(
+                src.text, level, n=3,
+                model=settings.default_model, claude_key=settings.anthropic_key,
+            )
+            store.replace_questions(source_id, qs)
+        return _list_partial(request)
+
+    @app.post("/sources/{source_id}/questions/add", response_class=HTMLResponse)
+    def add_q(request: Request, source_id: int, text: str = Form(...)):
+        if text.strip():
+            store.add_question(source_id, text.strip())
+        return _list_partial(request)
+
+    @app.post("/questions/{question_id}/edit", response_class=HTMLResponse)
+    def edit_q(request: Request, question_id: int, text: str = Form(...)):
+        store.update_question(question_id, text.strip())
+        return _list_partial(request)
+
+    @app.post("/questions/{question_id}/delete", response_class=HTMLResponse)
+    def delete_q(request: Request, question_id: int):
+        store.delete_question(question_id)
         return _list_partial(request)
 
     @app.post("/sources/{source_id}/toggle", response_class=HTMLResponse)

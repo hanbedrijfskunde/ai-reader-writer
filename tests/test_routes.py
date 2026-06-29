@@ -160,3 +160,59 @@ def test_pasted_transcript_generates_synopsis(tmp_path, monkeypatch):
     client.post("/export")
     html_txt = (tmp_path / "data" / "renders" / "index.html").read_text(encoding="utf-8")
     assert "AI-synopsis uit transcript." in html_txt
+
+
+def _add_pdf_like_source(client, monkeypatch):
+    """Add a source that has text (via the video route with a transcript), so
+    question generation has something to work with. Returns its source id."""
+    import re
+    import app.main as main
+    fake = {
+        "metadata": {"title": "Bron", "url": "https://youtu.be/q",
+                     "video_id": "q", "thumbnail": "https://t/t.jpg"},
+        "transcript": [{"ts": "0:00", "text": "inhoud over leiderschap"}],
+    }
+    monkeypatch.setattr(main.video, "fetch_raw", lambda url, _runner=None: fake)
+    monkeypatch.setattr(main, "summarize", lambda text, **kw: "syn")
+    partial = client.post("/sources/video", data={"url": "https://youtu.be/q"}).text
+    return int(re.search(r'data-id="(\d+)"', partial).group(1))
+
+
+def test_generate_questions_route(tmp_path, monkeypatch):
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    sid = _add_pdf_like_source(client, monkeypatch)
+    monkeypatch.setattr(main, "generate_questions",
+                        lambda text, level, n=3, **kw: ["V1?", "V2?", "V3?"])
+    resp = client.post(f"/sources/{sid}/questions/generate")
+    assert resp.status_code == 200
+    assert "V1?" in resp.text and "V3?" in resp.text
+
+
+def test_generate_questions_skipped_without_text(tmp_path, monkeypatch):
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    sid = _add_transcriptless_video(client, monkeypatch)  # text == ""
+    called = {"n": 0}
+
+    def spy(*a, **k):
+        called["n"] += 1
+        return ["x"]
+
+    monkeypatch.setattr(main, "generate_questions", spy)
+    resp = client.post(f"/sources/{sid}/questions/generate")
+    assert resp.status_code == 200
+    assert called["n"] == 0  # no source text -> generator not called
+
+
+def test_add_edit_delete_question(tmp_path, monkeypatch):
+    import re
+    client = _client(tmp_path, monkeypatch)
+    sid = _add_pdf_like_source(client, monkeypatch)
+    r1 = client.post(f"/sources/{sid}/questions/add", data={"text": "Mijn vraag?"})
+    assert "Mijn vraag?" in r1.text
+    qid = int(re.search(r'/questions/(\d+)/edit', r1.text).group(1))
+    r2 = client.post(f"/questions/{qid}/edit", data={"text": "Aangepast?"})
+    assert "Aangepast?" in r2.text and "Mijn vraag?" not in r2.text
+    r3 = client.post(f"/questions/{qid}/delete")
+    assert "Aangepast?" not in r3.text
