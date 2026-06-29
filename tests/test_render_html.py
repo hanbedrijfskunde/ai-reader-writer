@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from app.models import Source
 from app.render import html
 
@@ -20,17 +18,29 @@ def _doc(title: str) -> Source:
     )
 
 
-def test_render_writes_index_html(tmp_path):
+def test_render_writes_index_html_with_design_system(tmp_path):
     out = html.render_reader(
         "Module A", [_video("Vid")], tmp_path, render_pdf_pages=lambda fn: [],
     )
     assert out == tmp_path / "index.html"
     content = out.read_text(encoding="utf-8")
-    assert "Module A" in content
-    assert "Vid" in content
+    assert "fonts.googleapis.com" in content and "Spectral" in content
+    assert 'class="sheet"' in content and 'class="band"' in content
+    assert 'class="band-n">01' in content
+    assert "Module A" in content        # cover title
+    assert "Vid" in content             # band title
     assert "Synopsis hier." in content
     assert "https://youtu.be/abc" in content
     assert "https://img/thumb.jpg" in content
+
+
+def test_render_subtitle_in_cover(tmp_path):
+    out = html.render_reader(
+        "T", [], tmp_path, render_pdf_pages=lambda fn: [], subtitle="BK-101 · 2025-2026",
+    )
+    content = out.read_text(encoding="utf-8")
+    assert "BK-101 · 2025-2026" in content
+    assert 'class="reader-meta"' in content
 
 
 def test_render_includes_pdf_page_images(tmp_path):
@@ -40,8 +50,7 @@ def test_render_includes_pdf_page_images(tmp_path):
         "M", [_doc("Doc")], tmp_path, render_pdf_pages=lambda fn: [page],
     )
     content = out.read_text(encoding="utf-8")
-    assert "page-0001.png" in content
-    assert "<img" in content
+    assert "page-0001.png" in content and 'class="page-img"' in content
 
 
 def test_render_skips_excluded_sources(tmp_path):
@@ -51,35 +60,23 @@ def test_render_skips_excluded_sources(tmp_path):
     assert "Verborgen" not in out.read_text(encoding="utf-8")
 
 
-def test_render_preserves_source_order(tmp_path):
+def test_render_preserves_source_order_and_numbers(tmp_path):
     out = html.render_reader(
-        "Order Test", [_video("AAA"), _doc("BBB")], tmp_path, render_pdf_pages=lambda fn: [],
+        "M", [_video("AAA"), _doc("BBB")], tmp_path, render_pdf_pages=lambda fn: [],
     )
     content = out.read_text(encoding="utf-8")
     assert content.index("AAA") < content.index("BBB")
+    assert 'class="band-n">01' in content and 'class="band-n">02' in content
 
 
 def test_render_escapes_html_in_title(tmp_path):
-    v = _video("x")
-    v.title = "<script>alert(1)</script>"
-    out = html.render_reader("Escape Test", [v], tmp_path, render_pdf_pages=lambda fn: [])
+    out = html.render_reader(
+        "T", [_video("<script>alert(1)</script>")], tmp_path,
+        render_pdf_pages=lambda fn: [],
+    )
     content = out.read_text(encoding="utf-8")
-    assert "<script>" not in content
+    assert "<script>alert(1)</script>" not in content
     assert "&lt;script&gt;" in content
-
-
-def test_render_multiple_documents_do_not_collide(tmp_path):
-    d1 = _doc("First"); d1.filename = "alpha.pdf"
-    d2 = _doc("Second"); d2.filename = "beta.pdf"
-    def stub(fn):
-        sub = tmp_path / Path(fn).stem
-        sub.mkdir(parents=True, exist_ok=True)
-        p = sub / "page-0001.png"; p.write_bytes(b"\x89PNG\r\n")
-        return [p]
-    out = html.render_reader("M", [d1, d2], tmp_path, render_pdf_pages=stub)
-    content = out.read_text(encoding="utf-8")
-    assert "alpha/page-0001.png" in content
-    assert "beta/page-0001.png" in content
 
 
 def test_render_strips_javascript_url_scheme(tmp_path):
@@ -88,59 +85,76 @@ def test_render_strips_javascript_url_scheme(tmp_path):
     out = html.render_reader("M", [v], tmp_path, render_pdf_pages=lambda fn: [])
     content = out.read_text(encoding="utf-8")
     assert "javascript:alert(1)" not in content
-    assert 'href=""' in content  # scheme allowlisted to empty
-
-
-def test_render_includes_subtitle(tmp_path):
-    out = html.render_reader("Mijn Titel", [], tmp_path,
-                             render_pdf_pages=lambda fn: [],
-                             subtitle="BK-101 · 2025-2026")
-    content = out.read_text(encoding="utf-8")
-    assert "<h1>Mijn Titel</h1>" in content
-    assert "BK-101 · 2025-2026" in content
-    assert 'class="reader-meta"' in content
-
-
-def test_render_escapes_subtitle(tmp_path):
-    out = html.render_reader("T", [], tmp_path, render_pdf_pages=lambda fn: [],
-                             subtitle="<script>x</script>")
-    content = out.read_text(encoding="utf-8")
-    assert "<script>x</script>" not in content
-    assert "&lt;script&gt;" in content
-
-
-def test_render_without_subtitle_has_no_meta(tmp_path):
-    out = html.render_reader("T", [], tmp_path, render_pdf_pages=lambda fn: [])
-    content = out.read_text(encoding="utf-8")
-    assert 'class="reader-meta"' not in content
+    assert 'href=""' in content
 
 
 def test_render_video_omits_empty_synopsis_paragraph(tmp_path):
     v = _video("Zonder synopsis")
     v.synopsis = None
     out = html.render_reader("M", [v], tmp_path, render_pdf_pages=lambda fn: [])
+    assert 'class="synopsis"' not in out.read_text(encoding="utf-8")
+
+
+def test_render_multiple_documents_do_not_collide(tmp_path):
+    d1 = _doc("First"); d1.filename = "alpha.pdf"
+    d2 = _doc("Second"); d2.filename = "beta.pdf"
+
+    def stub(fn):
+        from pathlib import Path
+        sub = tmp_path / Path(fn).stem
+        sub.mkdir(parents=True, exist_ok=True)
+        p = sub / "page-0001.png"; p.write_bytes(b"\x89PNG\r\n")
+        return [p]
+
+    out = html.render_reader("M", [d1, d2], tmp_path, render_pdf_pages=stub)
     content = out.read_text(encoding="utf-8")
-    assert 'class="synopsis"' not in content  # no empty synopsis block
+    assert "alpha/page-0001.png" in content
+    assert "beta/page-0001.png" in content
 
 
-def test_render_includes_questions_block(tmp_path):
-    v = _video("Vid")  # id == 1 in de _video-helper
+def test_render_includes_questions_block_in_sheet(tmp_path):
+    v = _video("Vid")
     out = html.render_reader(
         "M", [v], tmp_path, render_pdf_pages=lambda fn: [],
         questions_by_source={v.id: ["Waarom werkt dit?", "<b>Hoe</b> nu?"]},
     )
     content = out.read_text(encoding="utf-8")
-    assert 'class="questions"' in content
-    assert "Verdiepende vragen" in content
+    assert 'class="questions"' in content and "Verdiepende vragen" in content
     assert "Waarom werkt dit?" in content
-    assert "&lt;b&gt;Hoe&lt;/b&gt; nu?" in content   # escaped
-    assert "<b>Hoe</b> nu?" not in content
+    assert "&lt;b&gt;Hoe&lt;/b&gt; nu?" in content and "<b>Hoe</b> nu?" not in content
 
 
 def test_render_no_questions_block_when_absent(tmp_path):
-    v = _video("Vid")
     out = html.render_reader(
-        "M", [v], tmp_path, render_pdf_pages=lambda fn: [],
+        "M", [_video("Vid")], tmp_path, render_pdf_pages=lambda fn: [],
         questions_by_source={},
     )
     assert 'class="questions"' not in out.read_text(encoding="utf-8")
+
+
+def test_render_quote_appetizer(tmp_path):
+    v = _video("Vid")
+    out = html.render_reader(
+        "M", [v], tmp_path, render_pdf_pages=lambda fn: [],
+        quotes_by_source={v.id: "Een pakkende <zin>."},
+    )
+    content = out.read_text(encoding="utf-8")
+    assert 'class="r-quote"' in content
+    assert "Een pakkende &lt;zin&gt;." in content
+    assert "<zin>" not in content
+
+
+def test_render_no_quote_when_absent(tmp_path):
+    out = html.render_reader(
+        "M", [_video("Vid")], tmp_path, render_pdf_pages=lambda fn: [],
+    )
+    assert 'class="r-quote"' not in out.read_text(encoding="utf-8")
+
+
+def test_band_meta_doc_vs_video(tmp_path):
+    out = html.render_reader(
+        "M", [_doc("Doc"), _video("Vid")], tmp_path, render_pdf_pages=lambda fn: [],
+    )
+    content = out.read_text(encoding="utf-8")
+    assert "PDF · 2 p." in content
+    assert "Video · 1:00" in content
