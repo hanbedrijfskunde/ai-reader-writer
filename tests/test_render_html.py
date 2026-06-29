@@ -158,3 +158,18 @@ def test_band_meta_doc_vs_video(tmp_path):
     content = out.read_text(encoding="utf-8")
     assert "PDF · 2 p." in content
     assert "Video · 1:00" in content
+
+
+def test_render_escapes_subtitle(tmp_path):
+    out = html.render_reader(
+        "T", [], tmp_path, render_pdf_pages=lambda fn: [],
+        subtitle="<script>x</script>",
+    )
+    content = out.read_text(encoding="utf-8")
+    assert "<script>x</script>" not in content
+    assert "&lt;script&gt;" in content
+
+
+def test_render_without_subtitle_has_no_meta(tmp_path):
+    out = html.render_reader("T", [], tmp_path, render_pdf_pages=lambda fn: [])
+    assert 'class="reader-meta"' not in out.read_text(encoding="utf-8")
