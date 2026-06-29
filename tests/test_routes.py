@@ -35,6 +35,7 @@ def test_add_video_lists_source(tmp_path, monkeypatch):
     }
     monkeypatch.setattr(main.video, "fetch_raw", lambda url, _runner=None: fake)
     monkeypatch.setattr(main, "summarize", lambda text, **kw: "Synopsis.")
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "")
     client = _client(tmp_path, monkeypatch)
     resp = client.post("/sources/video", data={"url": "https://youtu.be/x"})
     assert resp.status_code == 200
@@ -43,9 +44,11 @@ def test_add_video_lists_source(tmp_path, monkeypatch):
 
 def test_add_pdf_lists_source(tmp_path, monkeypatch, sample_pdf_dir):
     import pytest
+    import app.main as main
     pdf_file = sample_pdf_dir / "Over leiderschap_DIG.pdf"
     if not pdf_file.exists():
         pytest.skip("sample PDF ontbreekt")
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "")
     client = _client(tmp_path, monkeypatch)
     with pdf_file.open("rb") as fh:
         resp = client.post(
@@ -58,9 +61,11 @@ def test_add_pdf_lists_source(tmp_path, monkeypatch, sample_pdf_dir):
 
 def test_pdf_upload_filename_is_sanitized(tmp_path, monkeypatch, sample_pdf_dir):
     import pytest
+    import app.main as main
     pdf_file = sample_pdf_dir / "Over leiderschap_DIG.pdf"
     if not pdf_file.exists():
         pytest.skip("sample PDF ontbreekt")
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "")
     client = _client(tmp_path, monkeypatch)
     with pdf_file.open("rb") as fh:
         resp = client.post("/sources/pdf",
@@ -79,6 +84,7 @@ def test_export_writes_reader_html(tmp_path, monkeypatch, sample_pdf_dir):
     if not pdf_file.exists():
         pytest.skip("sample PDF ontbreekt")
     import app.main as main
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "")
     client = _client(tmp_path, monkeypatch)
     with pdf_file.open("rb") as fh:
         client.post("/sources/pdf", files={"file": ("doc.pdf", fh, "application/pdf")})
@@ -181,6 +187,7 @@ def _add_pdf_like_source(client, monkeypatch):
 def test_generate_questions_route(tmp_path, monkeypatch):
     import app.main as main
     client = _client(tmp_path, monkeypatch)
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "")
     sid = _add_pdf_like_source(client, monkeypatch)
     monkeypatch.setattr(main, "generate_questions",
                         lambda text, level, n=3, **kw: ["V1?", "V2?", "V3?"])
@@ -207,7 +214,9 @@ def test_generate_questions_skipped_without_text(tmp_path, monkeypatch):
 
 def test_add_edit_delete_question(tmp_path, monkeypatch):
     import re
+    import app.main as main
     client = _client(tmp_path, monkeypatch)
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "")
     sid = _add_pdf_like_source(client, monkeypatch)
     r1 = client.post(f"/sources/{sid}/questions/add", data={"text": "Mijn vraag?"})
     assert "Mijn vraag?" in r1.text
@@ -221,6 +230,7 @@ def test_add_edit_delete_question(tmp_path, monkeypatch):
 def test_export_html_includes_questions(tmp_path, monkeypatch):
     import app.main as main
     client = _client(tmp_path, monkeypatch)
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "")
     sid = _add_pdf_like_source(client, monkeypatch)
     client.post(f"/sources/{sid}/questions/add", data={"text": "Exportvraag?"})
     monkeypatch.setattr(main.pdf, "render_pages_to_png", lambda *a, **k: [])
@@ -233,6 +243,7 @@ def test_export_html_includes_questions(tmp_path, monkeypatch):
 def test_export_pdf_route_invokes_printer(tmp_path, monkeypatch):
     import app.main as main
     client = _client(tmp_path, monkeypatch)
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "")
     sid = _add_pdf_like_source(client, monkeypatch)
     monkeypatch.setattr(main.pdf, "render_pages_to_png", lambda *a, **k: [])
     seen = {}
@@ -253,7 +264,9 @@ def test_export_pdf_route_invokes_printer(tmp_path, monkeypatch):
 
 def test_question_text_escaped_in_editor(tmp_path, monkeypatch):
     import re
+    import app.main as main
     client = _client(tmp_path, monkeypatch)
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "")
     sid = _add_pdf_like_source(client, monkeypatch)
     resp = client.post(f"/sources/{sid}/questions/add",
                        data={"text": '<b>"gevaar"</b>'})
@@ -261,3 +274,57 @@ def test_question_text_escaped_in_editor(tmp_path, monkeypatch):
     # the raw tag must not appear unescaped; the escaped form must
     assert "<b>\"gevaar\"</b>" not in resp.text
     assert "&lt;b&gt;" in resp.text
+
+
+def test_adding_video_with_text_extracts_quote(tmp_path, monkeypatch):
+    import re
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "inhoud over leiderschap")
+    sid = _add_pdf_like_source(client, monkeypatch)  # this source has transcript text
+    store = main_store(client)
+    src = {s.id: s for s in store.list_sources(store_project_id(client))}[sid]
+    assert src.quote == "inhoud over leiderschap"
+
+
+def test_adding_source_without_text_skips_quote(tmp_path, monkeypatch):
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    called = {"n": 0}
+    def spy(text, **kw):
+        called["n"] += 1
+        return "x"
+    monkeypatch.setattr(main, "extract_quote", spy)
+    _add_transcriptless_video(client, monkeypatch)  # text == ""
+    assert called["n"] == 0
+
+
+def main_store(client):
+    return client.app.state.store
+
+
+def store_project_id(client):
+    return client.app.state.project_id
+
+
+def test_export_html_includes_quote(tmp_path, monkeypatch):
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "inhoud over leiderschap")
+    sid = _add_pdf_like_source(client, monkeypatch)  # has text -> quote stored
+    monkeypatch.setattr(main.pdf, "render_pages_to_png", lambda *a, **k: [])
+    client.post("/export")
+    html_txt = (tmp_path / "data" / "renders" / "index.html").read_text(encoding="utf-8")
+    assert 'class="r-quote"' in html_txt
+    assert "inhoud over leiderschap" in html_txt
+
+
+def test_index_uses_design_system(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+    body = client.get("/").text
+    assert "fonts.googleapis.com" in body
+    assert "#e5007d" in body          # magenta accent token
+    assert "Archivo" in body
+    # existing functionality still present
+    assert 'hx-post="/sources/pdf"' in body
+    assert 'hx-post="/export/pdf"' in body

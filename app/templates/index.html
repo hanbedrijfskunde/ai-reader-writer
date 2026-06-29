@@ -2,13 +2,39 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Reader &amp; Writer</title>
   <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js"
           integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
           crossorigin="anonymous"></script>
-  <style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto}</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,500&display=swap">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#e7e2d6;color:#211d18;font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+    .app{max-width:880px;margin:0 auto;padding:36px 20px 70px}
+    h1{font:600 34px/1.1 'Spectral';margin:0 0 6px}
+    h2{font:600 12px 'Archivo';letter-spacing:.16em;text-transform:uppercase;color:#8a8175;margin:34px 0 10px;border-bottom:1px solid #d8d1c2;padding-bottom:6px}
+    label{font-size:14px;color:#3a352d}
+    input[type=text],input[type=url],input[type=file],select,textarea{
+      font:400 14px 'Archivo';color:#211d18;background:#fbf9f4;border:1px solid #cfc7b6;
+      border-radius:6px;padding:8px 10px;margin:2px 0}
+    textarea{width:100%}
+    button{font:600 13px 'Archivo';color:#fff;background:#e5007d;border:0;border-radius:6px;
+      padding:9px 16px;cursor:pointer;letter-spacing:.02em}
+    button:hover{background:#c70069}
+    #source-list{list-style:none;padding:0;margin:0}
+    #source-list>li{background:#fbf9f4;border:1px solid #e2dccd;border-radius:8px;padding:14px 16px;margin:10px 0}
+    #source-list strong{font:600 15px 'Spectral'}
+    #source-list .questions{margin-top:12px;border-top:1px solid #ece6d8;padding-top:10px}
+    details{margin-top:8px}
+    summary{cursor:pointer;color:#8a8175;font-size:13px}
+    a{color:#e5007d}
+  </style>
 </head>
 <body>
+<div class="app">
   <h1>AI Reader &amp; Writer</h1>
 
   <h2>Reader-gegevens</h2>
@@ -63,5 +89,6 @@
     <button type="submit">Exporteer reader (PDF)</button>
   </form>
   <div id="export-result"></div>
+</div>
 </body>
 </html>

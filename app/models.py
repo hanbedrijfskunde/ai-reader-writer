@@ -31,6 +31,7 @@ class Source:
     duration: str | None = None
     thumbnail_url: str | None = None
     synopsis: str | None = None
+    quote: str | None = None
 
 
 @dataclass
