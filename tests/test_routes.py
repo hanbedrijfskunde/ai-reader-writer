@@ -117,3 +117,46 @@ def test_meta_saved_prefilled_and_used_in_export(tmp_path, monkeypatch):
     html_txt = (tmp_path / "data" / "renders" / "index.html").read_text(encoding="utf-8")
     assert "<h1>Strategie</h1>" in html_txt
     assert "BK-101 · 2025-2026" in html_txt
+
+
+def _add_transcriptless_video(client, monkeypatch):
+    """Add a video via the route with NO transcript; return its source id."""
+    import re
+    import app.main as main
+    fake = {
+        "metadata": {"title": "Lange talk", "url": "https://youtu.be/z",
+                     "video_id": "z", "thumbnail": "https://t/thumb.jpg"},
+        "transcript": [],
+    }
+    monkeypatch.setattr(main.video, "fetch_raw", lambda url, _runner=None: fake)
+    partial = client.post("/sources/video", data={"url": "https://youtu.be/z"}).text
+    return int(re.search(r'data-id="(\d+)"', partial).group(1))
+
+
+def test_video_synopsis_can_be_edited_and_exported(tmp_path, monkeypatch):
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    sid = _add_transcriptless_video(client, monkeypatch)
+    # teacher fills in a manual synopsis directly
+    resp = client.post(f"/sources/{sid}/content",
+                       data={"synopsis": "Handmatige samenvatting."})
+    assert resp.status_code == 200
+    monkeypatch.setattr(main.pdf, "render_pages_to_png", lambda *a, **k: [])
+    client.post("/export")
+    html_txt = (tmp_path / "data" / "renders" / "index.html").read_text(encoding="utf-8")
+    assert "Handmatige samenvatting." in html_txt
+
+
+def test_pasted_transcript_generates_synopsis(tmp_path, monkeypatch):
+    import app.main as main
+    client = _client(tmp_path, monkeypatch)
+    sid = _add_transcriptless_video(client, monkeypatch)
+    # AI is mocked: pasting a transcript should trigger summarize and store it
+    monkeypatch.setattr(main, "summarize", lambda text, **kw: "AI-synopsis uit transcript.")
+    resp = client.post(f"/sources/{sid}/content",
+                       data={"transcript": "het volledige transcript hier"})
+    assert resp.status_code == 200
+    monkeypatch.setattr(main.pdf, "render_pages_to_png", lambda *a, **k: [])
+    client.post("/export")
+    html_txt = (tmp_path / "data" / "renders" / "index.html").read_text(encoding="utf-8")
+    assert "AI-synopsis uit transcript." in html_txt

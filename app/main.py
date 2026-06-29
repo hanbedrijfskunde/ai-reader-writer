@@ -103,6 +103,29 @@ def create_app() -> FastAPI:
         store.reorder_sources(project_id, ids)
         return _list_partial(request)
 
+    @app.post("/sources/{source_id}/content", response_class=HTMLResponse)
+    def edit_content(
+        request: Request,
+        source_id: int,
+        transcript: str = Form(""),
+        synopsis: str = Form(""),
+    ):
+        transcript = transcript.strip()
+        synopsis = synopsis.strip()
+        # Pasting a transcript stores it and (unless the teacher also typed a
+        # synopsis) lets the AI generate one — the manual escape hatch for
+        # videos whose transcript YouTube withholds from automated fetching.
+        if transcript:
+            store.set_source_text(source_id, transcript)
+            if not synopsis:
+                synopsis = summarize(
+                    transcript, model=settings.default_model,
+                    claude_key=settings.anthropic_key,
+                )
+        if synopsis:
+            store.set_synopsis(source_id, synopsis)
+        return _list_partial(request)
+
     @app.post("/sources/{source_id}/toggle", response_class=HTMLResponse)
     def toggle(request: Request, source_id: int):
         current = {s.id: s for s in store.list_sources(project_id)}[source_id]

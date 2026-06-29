@@ -82,3 +82,17 @@ def test_meta_migration_on_legacy_db(tmp_path):
     store.set_meta(1, reader_title="T", module_code="C", academic_year="Y")
     got = store.get_project(1)
     assert (got.reader_title, got.module_code, got.academic_year) == ("T", "C", "Y")
+
+
+def test_set_synopsis_and_source_text(tmp_path):
+    store = Store(tmp_path / "t.sqlite")
+    p = store.create_project("M")
+    s = store.add_source(p.id, Source(
+        id=0, project_id=0, kind="video", title="V", position=0,
+        included=True, text="", synopsis=None, youtube_url="https://y/x",
+    ))
+    store.set_synopsis(s.id, "Handmatige synopsis")
+    store.set_source_text(s.id, "het transcript")
+    got = store.list_sources(p.id)[0]
+    assert got.synopsis == "Handmatige synopsis"
+    assert got.text == "het transcript"
