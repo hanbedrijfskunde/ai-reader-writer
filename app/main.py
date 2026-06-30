@@ -115,18 +115,19 @@ def create_app() -> FastAPI:
         return HTMLResponse("<span>Opgeslagen ✓</span>")
 
     @app.post("/sources/pdf", response_class=HTMLResponse)
-    async def add_pdf(request: Request, file: UploadFile = File(...)):
-        sanitized_filename = Path(file.filename).name
-        dest = settings.upload_dir / sanitized_filename
-        dest.write_bytes(await file.read())
-        src = Source(
-            id=0, project_id=project_id, kind="document",
-            title=Path(sanitized_filename).stem, position=0, included=True,
-            text=pdf.extract_text(dest), filename=sanitized_filename,
-            page_count=pdf.page_count(dest),
-        )
-        stored = store.add_source(project_id, src)
-        _autoquote(stored)
+    async def add_pdf(request: Request, file: list[UploadFile] = File(...)):
+        for upload in file:
+            sanitized_filename = Path(upload.filename).name
+            dest = settings.upload_dir / sanitized_filename
+            dest.write_bytes(await upload.read())
+            src = Source(
+                id=0, project_id=project_id, kind="document",
+                title=Path(sanitized_filename).stem, position=0, included=True,
+                text=pdf.extract_text(dest), filename=sanitized_filename,
+                page_count=pdf.page_count(dest),
+            )
+            stored = store.add_source(project_id, src)
+            _autoquote(stored)
         return _list_partial(request)
 
     @app.post("/sources/video", response_class=HTMLResponse)
