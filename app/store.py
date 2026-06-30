@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS learning_outcomes (
     code TEXT NOT NULL,
     title TEXT NOT NULL DEFAULT '',
     weight REAL NOT NULL DEFAULT 0,
+    bloom_level TEXT,
     position INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS toetsvragen (
@@ -87,6 +88,7 @@ class Store:
         self._conn.executescript(_SCHEMA)
         self._ensure_project_columns()
         self._ensure_source_columns()
+        self._ensure_outcome_columns()
         self._conn.commit()
 
     # Columns added after the first release; ALTER them onto pre-existing DBs.
@@ -110,6 +112,19 @@ class Store:
         for col, col_type in self._SOURCE_META_COLS.items():
             if col not in existing:
                 self._conn.execute(f"ALTER TABLE sources ADD COLUMN {col} {col_type}")
+        self._conn.commit()
+
+    _OUTCOME_META_COLS = {"bloom_level": "TEXT"}
+
+    def _ensure_outcome_columns(self) -> None:
+        existing = {
+            r["name"] for r in self._conn.execute("PRAGMA table_info(learning_outcomes)")
+        }
+        for col, col_type in self._OUTCOME_META_COLS.items():
+            if col not in existing:
+                self._conn.execute(
+                    f"ALTER TABLE learning_outcomes ADD COLUMN {col} {col_type}"
+                )
         self._conn.commit()
 
     def create_project(self, name: str) -> Project:
@@ -293,11 +308,13 @@ class Store:
     def _row_to_outcome(self, row: sqlite3.Row) -> LearningOutcome:
         return LearningOutcome(
             id=row["id"], project_id=row["project_id"], code=row["code"],
-            title=row["title"], weight=row["weight"], position=row["position"],
+            title=row["title"], weight=row["weight"],
+            bloom_level=row["bloom_level"], position=row["position"],
         )
 
     def add_learning_outcome(
-        self, project_id: int, *, code: str, title: str, weight: float
+        self, project_id: int, *, code: str, title: str, weight: float,
+        bloom_level: str | None = None,
     ) -> LearningOutcome:
         next_pos = self._conn.execute(
             "SELECT COALESCE(MAX(position) + 1, 0) AS p FROM learning_outcomes "
@@ -305,9 +322,9 @@ class Store:
             (project_id,),
         ).fetchone()["p"]
         cur = self._conn.execute(
-            "INSERT INTO learning_outcomes (project_id, code, title, weight, position) "
-            "VALUES (?,?,?,?,?)",
-            (project_id, code, title, weight, next_pos),
+            "INSERT INTO learning_outcomes (project_id, code, title, weight, "
+            "bloom_level, position) VALUES (?,?,?,?,?,?)",
+            (project_id, code, title, weight, bloom_level, next_pos),
         )
         self._conn.commit()
         row = self._conn.execute(
@@ -323,11 +340,13 @@ class Store:
         return [self._row_to_outcome(r) for r in rows]
 
     def update_learning_outcome(
-        self, outcome_id: int, *, code: str, title: str, weight: float
+        self, outcome_id: int, *, code: str, title: str, weight: float,
+        bloom_level: str | None = None,
     ) -> None:
         self._conn.execute(
-            "UPDATE learning_outcomes SET code = ?, title = ?, weight = ? WHERE id = ?",
-            (code, title, weight, outcome_id),
+            "UPDATE learning_outcomes SET code = ?, title = ?, weight = ?, "
+            "bloom_level = ? WHERE id = ?",
+            (code, title, weight, bloom_level, outcome_id),
         )
         self._conn.commit()
 

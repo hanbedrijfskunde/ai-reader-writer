@@ -23,6 +23,20 @@ def test_update_learning_outcome(tmp_path):
     assert got.title == "Nieuw" and got.weight == 0.75
 
 
+def test_learning_outcome_carries_bloom_level(tmp_path):
+    store = Store(tmp_path / "t.sqlite")
+    p = store.create_project("M")
+    lo = store.add_learning_outcome(
+        p.id, code="LU1", title="x", weight=1.0, bloom_level="Analyseren"
+    )
+    assert lo.bloom_level == "Analyseren"
+    assert store.list_learning_outcomes(p.id)[0].bloom_level == "Analyseren"
+    store.update_learning_outcome(
+        lo.id, code="LU1", title="x", weight=1.0, bloom_level="Evalueren"
+    )
+    assert store.list_learning_outcomes(p.id)[0].bloom_level == "Evalueren"
+
+
 def test_delete_learning_outcome(tmp_path):
     store = Store(tmp_path / "t.sqlite")
     p = store.create_project("M")

@@ -50,6 +50,7 @@ class LearningOutcome:
     code: str
     title: str
     weight: float  # relatieve weging binnen het project (bijv. 0.6)
+    bloom_level: str | None = None  # stuurt de mc/open-mix per leeruitkomst
     position: int = 0
 
 
