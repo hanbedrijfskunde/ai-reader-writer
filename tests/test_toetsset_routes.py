@@ -115,6 +115,18 @@ def test_index_shows_csv_export_link_when_questions_exist(tmp_path, monkeypatch)
     assert "/toetsset/export/csv" in body
 
 
+def test_questions_not_rendered_in_page_only_count_and_csv(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+    st, pid = _store(client), _pid(client)
+    st.add_toetsvraag(pid, ToetsVraag(
+        id=0, project_id=pid, type="mc", stem="GEHEIME VRAAGTEKST",
+        options=["a", "b", "c", "d"], answer="a"))
+    body = client.get("/").text
+    assert "GEHEIME VRAAGTEKST" not in body          # questions are not shown
+    assert "/toetsset/export/csv" in body            # only the CSV export
+    assert "1 toetsvraag" in body                    # a count is shown instead
+
+
 def test_index_shows_toetsset_section(tmp_path, monkeypatch):
     client = _client(tmp_path, monkeypatch)
     body = client.get("/").text

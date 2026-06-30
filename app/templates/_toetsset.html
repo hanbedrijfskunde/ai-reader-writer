@@ -46,23 +46,7 @@
   {% endif %}
 
   {% if toetsvragen %}
+  <p>{{ toetsvragen|length }} {{ "toetsvraag" if toetsvragen|length == 1 else "toetsvragen" }} gegenereerd. De vragen zijn in te zien via de CSV-export.</p>
   <p><a href="/toetsset/export/csv" download="toetsset.csv">⬇ Exporteer toetsset (CSV)</a></p>
-  <ol id="toetsvraag-list">
-    {% for v in toetsvragen %}
-    <li>
-      <span class="qtype">[{{ v.type }}{% if v.bloom_level %} · {{ v.bloom_level }}{% endif %}]</span>
-      {{ v.stem }}
-      {% if v.type == "mc" %}
-      <ul>
-        {% for opt in v.options %}
-        <li>{{ opt }}{% if opt == v.answer %} <strong>✓</strong>{% endif %}</li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <div><em>Modelantwoord:</em> {{ v.answer }}</div>
-      {% endif %}
-    </li>
-    {% endfor %}
-  </ol>
   {% endif %}
 </div>
