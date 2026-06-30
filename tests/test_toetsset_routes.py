@@ -88,6 +88,45 @@ def test_generate_toetsset_when_definitief(tmp_path, monkeypatch):
     assert len(st.list_toetsvragen(pid)) == 10
 
 
+def test_export_toetsset_csv_route(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+    st, pid = _store(client), _pid(client)
+    lo = st.add_learning_outcome(pid, code="LU1", title="x", weight=1.0,
+                                 bloom_level="Begrijpen")
+    st.add_toetsvraag(pid, ToetsVraag(
+        id=0, project_id=pid, type="mc", stem="Wat is een TOM?",
+        learning_outcome_id=lo.id, options=["a", "b", "c", "d"], answer="a"))
+    resp = client.get("/toetsset/export/csv")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    cd = resp.headers["content-disposition"]
+    assert "attachment" in cd and "toetsset.csv" in cd
+    assert "leeruitkomst" in resp.text       # header row
+    assert "Wat is een TOM?" in resp.text
+    assert "LU1" in resp.text
+
+
+def test_index_shows_csv_export_link_when_questions_exist(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+    st, pid = _store(client), _pid(client)
+    st.add_toetsvraag(pid, ToetsVraag(id=0, project_id=pid, type="open",
+                                      stem="Leg uit.", answer="y"))
+    body = client.get("/").text
+    assert "/toetsset/export/csv" in body
+
+
+def test_questions_not_rendered_in_page_only_count_and_csv(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+    st, pid = _store(client), _pid(client)
+    st.add_toetsvraag(pid, ToetsVraag(
+        id=0, project_id=pid, type="mc", stem="GEHEIME VRAAGTEKST",
+        options=["a", "b", "c", "d"], answer="a"))
+    body = client.get("/").text
+    assert "GEHEIME VRAAGTEKST" not in body          # questions are not shown
+    assert "/toetsset/export/csv" in body            # only the CSV export
+    assert "1 toetsvraag" in body                    # a count is shown instead
+
+
 def test_index_shows_toetsset_section(tmp_path, monkeypatch):
     client = _client(tmp_path, monkeypatch)
     body = client.get("/").text

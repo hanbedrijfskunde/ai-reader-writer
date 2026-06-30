@@ -4,7 +4,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from app.config import load_settings
@@ -16,6 +16,7 @@ from app.ai.toetsvragen import generate_toets_questions  # noqa: F401  (monkeypa
 from app.models import Source
 from app.render import html as render_html
 from app.render.pdf import html_to_pdf  # noqa: F401  (monkeypatch-doel in tests)
+from app.render.toets_csv import toetsvragen_to_csv
 from app.store import Store
 from app.toets import build_toetsset
 
@@ -271,6 +272,17 @@ def create_app() -> FastAPI:
                     )
                 build_toetsset(store, project_id, total, reader_text, generate=_gen)
         return _toets_partial(request)
+
+    @app.get("/toetsset/export/csv")
+    def export_toetsset_csv():
+        csv_text = toetsvragen_to_csv(
+            store.list_toetsvragen(project_id),
+            store.list_learning_outcomes(project_id),
+        )
+        return Response(
+            content=csv_text, media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": 'attachment; filename="toetsset.csv"'},
+        )
 
     def _build_reader_html() -> Path:
         sources = store.list_sources(project_id)
