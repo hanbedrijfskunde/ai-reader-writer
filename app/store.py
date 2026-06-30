@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from app.models import Project, Question, Source
+from app.models import LearningOutcome, Project, Question, Source
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS projects (
@@ -39,6 +39,14 @@ CREATE TABLE IF NOT EXISTS questions (
     source_id INTEGER NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
     position INTEGER NOT NULL,
     text TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS learning_outcomes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    code TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT '',
+    weight REAL NOT NULL DEFAULT 0,
+    position INTEGER NOT NULL
 );
 """
 
@@ -263,4 +271,51 @@ class Store:
                 "INSERT INTO questions (source_id, position, text) VALUES (?,?,?)",
                 (source_id, pos, text),
             )
+        self._conn.commit()
+
+    def _row_to_outcome(self, row: sqlite3.Row) -> LearningOutcome:
+        return LearningOutcome(
+            id=row["id"], project_id=row["project_id"], code=row["code"],
+            title=row["title"], weight=row["weight"], position=row["position"],
+        )
+
+    def add_learning_outcome(
+        self, project_id: int, *, code: str, title: str, weight: float
+    ) -> LearningOutcome:
+        next_pos = self._conn.execute(
+            "SELECT COALESCE(MAX(position) + 1, 0) AS p FROM learning_outcomes "
+            "WHERE project_id = ?",
+            (project_id,),
+        ).fetchone()["p"]
+        cur = self._conn.execute(
+            "INSERT INTO learning_outcomes (project_id, code, title, weight, position) "
+            "VALUES (?,?,?,?,?)",
+            (project_id, code, title, weight, next_pos),
+        )
+        self._conn.commit()
+        row = self._conn.execute(
+            "SELECT * FROM learning_outcomes WHERE id = ?", (int(cur.lastrowid),)
+        ).fetchone()
+        return self._row_to_outcome(row)
+
+    def list_learning_outcomes(self, project_id: int) -> list[LearningOutcome]:
+        rows = self._conn.execute(
+            "SELECT * FROM learning_outcomes WHERE project_id = ? ORDER BY position",
+            (project_id,),
+        ).fetchall()
+        return [self._row_to_outcome(r) for r in rows]
+
+    def update_learning_outcome(
+        self, outcome_id: int, *, code: str, title: str, weight: float
+    ) -> None:
+        self._conn.execute(
+            "UPDATE learning_outcomes SET code = ?, title = ?, weight = ? WHERE id = ?",
+            (code, title, weight, outcome_id),
+        )
+        self._conn.commit()
+
+    def delete_learning_outcome(self, outcome_id: int) -> None:
+        self._conn.execute(
+            "DELETE FROM learning_outcomes WHERE id = ?", (outcome_id,)
+        )
         self._conn.commit()

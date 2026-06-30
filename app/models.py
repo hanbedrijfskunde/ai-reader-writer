@@ -41,3 +41,13 @@ class Question:
     source_id: int
     position: int
     text: str
+
+
+@dataclass
+class LearningOutcome:
+    id: int
+    project_id: int
+    code: str
+    title: str
+    weight: float  # relatieve weging binnen het project (bijv. 0.6)
+    position: int = 0
