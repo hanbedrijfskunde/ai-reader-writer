@@ -57,7 +57,7 @@ def create_app() -> FastAPI:
     existing = store._conn.execute("SELECT id FROM projects ORDER BY id LIMIT 1").fetchone()
     project_id = existing["id"] if existing else store.create_project("Mijn reader").id
 
-    app = FastAPI(title="AI Reader & Writer")
+    app = FastAPI(title="AI Reader Writer")
     app.state.settings = settings
     app.state.store = store
     app.state.project_id = project_id
