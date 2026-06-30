@@ -89,6 +89,34 @@ def test_add_pdf_lists_source(tmp_path, monkeypatch, sample_pdf_dir):
     assert "Over leiderschap" in resp.text
 
 
+def test_add_multiple_pdfs_creates_multiple_sources(tmp_path, monkeypatch, sample_pdf_dir):
+    import pytest
+    import app.main as main
+    pdf_file = sample_pdf_dir / "Over leiderschap_DIG.pdf"
+    if not pdf_file.exists():
+        pytest.skip("sample PDF ontbreekt")
+    monkeypatch.setattr(main, "extract_quote", lambda text, **kw: "")
+    client = _client(tmp_path, monkeypatch)
+    data = pdf_file.read_bytes()
+    resp = client.post("/sources/pdf", files=[
+        ("file", ("alpha.pdf", data, "application/pdf")),
+        ("file", ("beta.pdf", data, "application/pdf")),
+    ])
+    assert resp.status_code == 200
+    store = main_store(client)
+    docs = [s for s in store.list_sources(store_project_id(client)) if s.kind == "document"]
+    assert len(docs) == 2
+    assert {"alpha", "beta"} <= {s.title for s in docs}
+
+
+def test_pdf_input_allows_multiple_files(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+    body = client.get("/").text
+    # the upload control must let the teacher pick several PDFs at once
+    assert 'name="file"' in body
+    assert "multiple" in body
+
+
 def test_pdf_upload_filename_is_sanitized(tmp_path, monkeypatch, sample_pdf_dir):
     import pytest
     import app.main as main

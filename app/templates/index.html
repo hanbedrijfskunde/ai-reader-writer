@@ -57,10 +57,10 @@
     <span id="meta-result"></span>
   </form>
 
-  <h2>PDF toevoegen</h2>
+  <h2>PDF's toevoegen</h2>
   <form hx-post="/sources/pdf" hx-encoding="multipart/form-data" hx-target="#source-list" hx-swap="outerHTML">
-    <input type="file" name="file" accept="application/pdf" required>
-    <button type="submit">Upload PDF</button>
+    <input type="file" name="file" accept="application/pdf" multiple required>
+    <button type="submit">Upload PDF's</button>
   </form>
 
   <h2>YouTube-video toevoegen</h2>
