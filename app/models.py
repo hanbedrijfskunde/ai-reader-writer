@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -50,4 +50,23 @@ class LearningOutcome:
     code: str
     title: str
     weight: float  # relatieve weging binnen het project (bijv. 0.6)
+    position: int = 0
+
+
+@dataclass
+class ToetsVraag:
+    id: int
+    project_id: int
+    type: str  # "mc" | "open"
+    stem: str  # de stam van de vraag
+    learning_outcome_id: int | None = None
+    source_id: int | None = None  # herkomst (document of video)
+    bloom_level: str | None = None
+    options: list[str] = field(default_factory=list)  # afleiders + sleutel (mc)
+    answer: str = ""  # sleutel (mc) of modelantwoord (open)
+    # kwaliteitsborging (handboek toetssamenstelling), elk 1-5
+    validity: int | None = None
+    reliability: int | None = None
+    technical: int | None = None
+    notes: str | None = None  # toelichtingen bij de beoordeling
     position: int = 0
