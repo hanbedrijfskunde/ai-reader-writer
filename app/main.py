@@ -12,10 +12,12 @@ from app.ingest import pdf, video
 from app.ai.client import summarize  # noqa: F401  (monkeypatch-doel in tests)
 from app.ai.questions import generate_questions  # noqa: F401  (monkeypatch-doel in tests)
 from app.ai.quotes import extract_quote  # noqa: F401  (monkeypatch-doel in tests)
+from app.ai.toetsvragen import generate_toets_questions  # noqa: F401  (monkeypatch-doel)
 from app.models import Source
 from app.render import html as render_html
 from app.render.pdf import html_to_pdf  # noqa: F401  (monkeypatch-doel in tests)
 from app.store import Store
+from app.toets import build_toetsset
 
 _TEMPLATES = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 
@@ -71,6 +73,14 @@ def create_app() -> FastAPI:
             {"sources": sources, "questions": questions, "any_processing": any_processing},
         )
 
+    def _toets_partial(request: Request) -> HTMLResponse:
+        return _TEMPLATES.TemplateResponse(
+            request, "_toetsset.html",
+            {"project": store.get_project(project_id),
+             "outcomes": store.list_learning_outcomes(project_id),
+             "toetsvragen": store.list_toetsvragen(project_id)},
+        )
+
     def _autoquote(stored: Source) -> None:
         if stored.text.strip():
             quote = extract_quote(
@@ -93,7 +103,9 @@ def create_app() -> FastAPI:
         return _TEMPLATES.TemplateResponse(
             request, "index.html",
             {"sources": sources, "project": project, "questions": questions,
-             "any_processing": any_processing},
+             "any_processing": any_processing,
+             "outcomes": store.list_learning_outcomes(project_id),
+             "toetsvragen": store.list_toetsvragen(project_id)},
         )
 
     @app.get("/sources", response_class=HTMLResponse)
@@ -216,6 +228,49 @@ def create_app() -> FastAPI:
     def set_bloom(level: str = Form(...)):
         store.set_bloom_level(project_id, level)
         return {"status": "ok", "level": level}
+
+    @app.post("/outcomes", response_class=HTMLResponse)
+    def add_outcome(
+        request: Request,
+        code: str = Form(...),
+        title: str = Form(""),
+        weight: float = Form(0.0),
+        bloom_level: str = Form(""),
+    ):
+        if code.strip():
+            store.add_learning_outcome(
+                project_id, code=code.strip(), title=title.strip(),
+                weight=weight, bloom_level=bloom_level.strip() or None,
+            )
+        return _toets_partial(request)
+
+    @app.post("/outcomes/{outcome_id}/delete", response_class=HTMLResponse)
+    def delete_outcome(request: Request, outcome_id: int):
+        store.delete_learning_outcome(outcome_id)
+        return _toets_partial(request)
+
+    @app.post("/status", response_class=HTMLResponse)
+    def set_project_status(request: Request, status: str = Form(...)):
+        store.set_status(project_id, status.strip())
+        return _toets_partial(request)
+
+    @app.post("/toetsset/generate", response_class=HTMLResponse)
+    def generate_toetsset(request: Request, total: int = Form(...)):
+        # gated: a toetsset is only generated once the reader is final
+        if store.get_project(project_id).status == "Definitief":
+            sources = [
+                s for s in store.list_sources(project_id)
+                if s.included and s.text.strip()
+            ]
+            reader_text = "\n\n".join(s.text for s in sources)
+            if reader_text.strip():
+                def _gen(text, **kw):
+                    return generate_toets_questions(
+                        text, model=settings.default_model,
+                        claude_key=settings.anthropic_key, **kw,
+                    )
+                build_toetsset(store, project_id, total, reader_text, generate=_gen)
+        return _toets_partial(request)
 
     def _build_reader_html() -> Path:
         sources = store.list_sources(project_id)

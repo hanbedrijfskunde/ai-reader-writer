@@ -1,0 +1,67 @@
+<div id="toetsset">
+  <h2>Leeruitkomsten</h2>
+  <form hx-post="/outcomes" hx-target="#toetsset" hx-swap="outerHTML">
+    <input type="text" name="code" placeholder="LU1" required size="6">
+    <input type="text" name="title" placeholder="Omschrijving" size="34">
+    <label>weging
+      <input type="number" name="weight" step="0.05" min="0" value="0.25" style="width:72px"></label>
+    <select name="bloom_level">
+      <option value="">— Bloom —</option>
+      <option>Onthouden</option><option>Begrijpen</option><option>Toepassen</option>
+      <option>Analyseren</option><option>Evalueren</option><option>Creëren</option>
+    </select>
+    <button type="submit">Voeg toe</button>
+  </form>
+  {% if outcomes %}
+  <ul id="outcome-list">
+    {% for lo in outcomes %}
+    <li>
+      <strong>{{ lo.code }}</strong> — {{ lo.title }}
+      <em>weging {{ lo.weight }}{% if lo.bloom_level %} · {{ lo.bloom_level }}{% endif %}</em>
+      <form hx-post="/outcomes/{{ lo.id }}/delete" hx-target="#toetsset"
+            hx-swap="outerHTML" style="display:inline">
+        <button type="submit" title="Verwijderen">×</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>Nog geen leeruitkomsten. Voeg er minstens één toe met een weging.</p>
+  {% endif %}
+
+  <h2>Toetsset</h2>
+  <p>Reader-status: <strong>{{ project.status }}</strong></p>
+  {% if project.status != "Definitief" %}
+    <form hx-post="/status" hx-target="#toetsset" hx-swap="outerHTML">
+      <input type="hidden" name="status" value="Definitief">
+      <button type="submit">Zet reader op Definitief</button>
+    </form>
+    <p><em>De toetsset kan pas gegenereerd worden nadat de reader op Definitief staat.</em></p>
+  {% else %}
+    <form hx-post="/toetsset/generate" hx-target="#toetsset" hx-swap="outerHTML">
+      <label>Aantal toetsvragen
+        <input type="number" name="total" value="20" min="1" style="width:72px"></label>
+      <button type="submit">Genereer toetsset</button>
+    </form>
+  {% endif %}
+
+  {% if toetsvragen %}
+  <ol id="toetsvraag-list">
+    {% for v in toetsvragen %}
+    <li>
+      <span class="qtype">[{{ v.type }}{% if v.bloom_level %} · {{ v.bloom_level }}{% endif %}]</span>
+      {{ v.stem }}
+      {% if v.type == "mc" %}
+      <ul>
+        {% for opt in v.options %}
+        <li>{{ opt }}{% if opt == v.answer %} <strong>✓</strong>{% endif %}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div><em>Modelantwoord:</em> {{ v.answer }}</div>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+</div>

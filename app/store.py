@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from pathlib import Path
 
-from app.models import Project, Question, Source
+from app.models import LearningOutcome, Project, Question, Source, ToetsVraag
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS projects (
@@ -40,6 +41,31 @@ CREATE TABLE IF NOT EXISTS questions (
     position INTEGER NOT NULL,
     text TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS learning_outcomes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    code TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT '',
+    weight REAL NOT NULL DEFAULT 0,
+    bloom_level TEXT,
+    position INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS toetsvragen (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    learning_outcome_id INTEGER REFERENCES learning_outcomes(id) ON DELETE SET NULL,
+    source_id INTEGER REFERENCES sources(id) ON DELETE SET NULL,
+    type TEXT NOT NULL,
+    bloom_level TEXT,
+    stem TEXT NOT NULL,
+    options TEXT NOT NULL DEFAULT '[]',
+    answer TEXT NOT NULL DEFAULT '',
+    validity INTEGER,
+    reliability INTEGER,
+    technical INTEGER,
+    notes TEXT,
+    position INTEGER NOT NULL DEFAULT 0
+);
 """
 
 _SOURCE_COLS = [
@@ -62,6 +88,7 @@ class Store:
         self._conn.executescript(_SCHEMA)
         self._ensure_project_columns()
         self._ensure_source_columns()
+        self._ensure_outcome_columns()
         self._conn.commit()
 
     # Columns added after the first release; ALTER them onto pre-existing DBs.
@@ -85,6 +112,19 @@ class Store:
         for col, col_type in self._SOURCE_META_COLS.items():
             if col not in existing:
                 self._conn.execute(f"ALTER TABLE sources ADD COLUMN {col} {col_type}")
+        self._conn.commit()
+
+    _OUTCOME_META_COLS = {"bloom_level": "TEXT"}
+
+    def _ensure_outcome_columns(self) -> None:
+        existing = {
+            r["name"] for r in self._conn.execute("PRAGMA table_info(learning_outcomes)")
+        }
+        for col, col_type in self._OUTCOME_META_COLS.items():
+            if col not in existing:
+                self._conn.execute(
+                    f"ALTER TABLE learning_outcomes ADD COLUMN {col} {col_type}"
+                )
         self._conn.commit()
 
     def create_project(self, name: str) -> Project:
@@ -263,4 +303,107 @@ class Store:
                 "INSERT INTO questions (source_id, position, text) VALUES (?,?,?)",
                 (source_id, pos, text),
             )
+        self._conn.commit()
+
+    def _row_to_outcome(self, row: sqlite3.Row) -> LearningOutcome:
+        return LearningOutcome(
+            id=row["id"], project_id=row["project_id"], code=row["code"],
+            title=row["title"], weight=row["weight"],
+            bloom_level=row["bloom_level"], position=row["position"],
+        )
+
+    def add_learning_outcome(
+        self, project_id: int, *, code: str, title: str, weight: float,
+        bloom_level: str | None = None,
+    ) -> LearningOutcome:
+        next_pos = self._conn.execute(
+            "SELECT COALESCE(MAX(position) + 1, 0) AS p FROM learning_outcomes "
+            "WHERE project_id = ?",
+            (project_id,),
+        ).fetchone()["p"]
+        cur = self._conn.execute(
+            "INSERT INTO learning_outcomes (project_id, code, title, weight, "
+            "bloom_level, position) VALUES (?,?,?,?,?,?)",
+            (project_id, code, title, weight, bloom_level, next_pos),
+        )
+        self._conn.commit()
+        row = self._conn.execute(
+            "SELECT * FROM learning_outcomes WHERE id = ?", (int(cur.lastrowid),)
+        ).fetchone()
+        return self._row_to_outcome(row)
+
+    def list_learning_outcomes(self, project_id: int) -> list[LearningOutcome]:
+        rows = self._conn.execute(
+            "SELECT * FROM learning_outcomes WHERE project_id = ? ORDER BY position",
+            (project_id,),
+        ).fetchall()
+        return [self._row_to_outcome(r) for r in rows]
+
+    def update_learning_outcome(
+        self, outcome_id: int, *, code: str, title: str, weight: float,
+        bloom_level: str | None = None,
+    ) -> None:
+        self._conn.execute(
+            "UPDATE learning_outcomes SET code = ?, title = ?, weight = ?, "
+            "bloom_level = ? WHERE id = ?",
+            (code, title, weight, bloom_level, outcome_id),
+        )
+        self._conn.commit()
+
+    def delete_learning_outcome(self, outcome_id: int) -> None:
+        self._conn.execute(
+            "DELETE FROM learning_outcomes WHERE id = ?", (outcome_id,)
+        )
+        self._conn.commit()
+
+    def _row_to_toetsvraag(self, row: sqlite3.Row) -> ToetsVraag:
+        return ToetsVraag(
+            id=row["id"], project_id=row["project_id"],
+            learning_outcome_id=row["learning_outcome_id"], source_id=row["source_id"],
+            type=row["type"], bloom_level=row["bloom_level"], stem=row["stem"],
+            options=json.loads(row["options"]), answer=row["answer"],
+            validity=row["validity"], reliability=row["reliability"],
+            technical=row["technical"], notes=row["notes"], position=row["position"],
+        )
+
+    def add_toetsvraag(self, project_id: int, vraag: ToetsVraag) -> ToetsVraag:
+        next_pos = self._conn.execute(
+            "SELECT COALESCE(MAX(position) + 1, 0) AS p FROM toetsvragen "
+            "WHERE project_id = ?",
+            (project_id,),
+        ).fetchone()["p"]
+        cur = self._conn.execute(
+            "INSERT INTO toetsvragen (project_id, learning_outcome_id, source_id, "
+            "type, bloom_level, stem, options, answer, validity, reliability, "
+            "technical, notes, position) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (project_id, vraag.learning_outcome_id, vraag.source_id, vraag.type,
+             vraag.bloom_level, vraag.stem, json.dumps(vraag.options), vraag.answer,
+             vraag.validity, vraag.reliability, vraag.technical, vraag.notes, next_pos),
+        )
+        self._conn.commit()
+        row = self._conn.execute(
+            "SELECT * FROM toetsvragen WHERE id = ?", (int(cur.lastrowid),)
+        ).fetchone()
+        return self._row_to_toetsvraag(row)
+
+    def list_toetsvragen(self, project_id: int) -> list[ToetsVraag]:
+        rows = self._conn.execute(
+            "SELECT * FROM toetsvragen WHERE project_id = ? ORDER BY position",
+            (project_id,),
+        ).fetchall()
+        return [self._row_to_toetsvraag(r) for r in rows]
+
+    def set_toetsvraag_scores(
+        self, vraag_id: int, *, validity: int | None, reliability: int | None,
+        technical: int | None, notes: str | None = None,
+    ) -> None:
+        self._conn.execute(
+            "UPDATE toetsvragen SET validity = ?, reliability = ?, technical = ?, "
+            "notes = ? WHERE id = ?",
+            (validity, reliability, technical, notes, vraag_id),
+        )
+        self._conn.commit()
+
+    def delete_toetsvraag(self, vraag_id: int) -> None:
+        self._conn.execute("DELETE FROM toetsvragen WHERE id = ?", (vraag_id,))
         self._conn.commit()
